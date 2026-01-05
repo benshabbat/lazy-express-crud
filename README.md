@@ -41,6 +41,17 @@ npm run dev
 
 Your API is now running at `http://localhost:3000`! 🎉
 
+### Test with Postman
+
+Generate a Postman Collection for all your API endpoints:
+
+```bash
+cd my-api
+gen-postman
+```
+
+This creates `postman-collection.json` with all CRUD operations for every resource in your project. Import it to Postman and start testing!
+
 ## Adding More Resources
 
 After creating your project, easily add more CRUD resources:
@@ -175,9 +186,22 @@ Adds a new CRUD resource to an existing project (must be run from project root)
 add-crud User
 ```
 
+### gen-postman
+
+Generates a Postman Collection for all resources in your project (must be run from project root)
+
+**Example:**
+```bash
+gen-postman
+```
+
+This scans your routes and creates `postman-collection.json` with all CRUD endpoints.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## License
 

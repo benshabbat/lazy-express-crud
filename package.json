@@ -6,7 +6,8 @@
   "type": "commonjs",
   "bin": {
     "lazy-crud": "generateExpressCrud.js",
-    "add-crud": "addCrudResource.js"
+    "add-crud": "addCrudResource.js",
+    "gen-postman": "generatePostmanCollection.js"
   },
   "scripts": {
     "test": "node generateExpressCrud.js test-project"
@@ -44,7 +45,9 @@
   "files": [
     "generateExpressCrud.js",
     "addCrudResource.js",
+    "generatePostmanCollection.js",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ]
 }
