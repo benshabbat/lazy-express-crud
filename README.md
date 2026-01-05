@@ -185,9 +185,9 @@ MIT © 2026
 
 ## Support
 
-- 🐛 [Report a bug](https://github.com/benshabbat/scriptsForJs/issues)
-- 💡 [Request a feature](https://github.com/benshabbat/scriptsForJs/issues)
-- ⭐ Star this project on [GitHub](https://github.com/benshabbat/scriptsForJs)
+- 🐛 [Report a bug](https://github.com/benshabbat/lazy-express-crud/issues)
+- 💡 [Request a feature](https://github.com/benshabbat/lazy-express-crud/issues)
+- ⭐ Star this project on [GitHub](https://github.com/benshabbat/lazy-express-crud)
 
 ## Keywords
 

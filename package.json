@@ -35,12 +35,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/benshabbat/scriptsForJs.git"
+    "url": "git+https://github.com/benshabbat/lazy-express-crud.git"
   },
   "bugs": {
-    "url": "https://github.com/benshabbat/scriptsForJs/issues"
+    "url": "https://github.com/benshabbat/lazy-express-crud/issues"
   },
-  "homepage": "https://github.com/benshabbat/scriptsForJs#readme",
+  "homepage": "https://github.com/benshabbat/lazy-express-crud#readme",
   "files": [
     "generateExpressCrud.js",
     "addCrudResource.js",
