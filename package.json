@@ -1,6 +1,6 @@
 {
   "name": "lazy-express-crud",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "CLI tool to instantly generate a complete Express.js CRUD API with ES6 modules",
   "main": "generateExpressCrud.js",
   "type": "commonjs",
