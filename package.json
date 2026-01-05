@@ -1,13 +1,14 @@
 {
   "name": "lazy-express-crud",
-  "version": "1.0.4",
-  "description": "CLI tool to instantly generate a complete Express.js CRUD API with ES6 modules",
+  "version": "1.1.0",
+  "description": "CLI tool to instantly generate a complete Express.js CRUD API with authentication, ES6 modules, bcrypt and JWT",
   "main": "generateExpressCrud.js",
   "type": "commonjs",
   "bin": {
     "lazy-crud": "generateExpressCrud.js",
     "add-crud": "addCrudResource.js",
-    "gen-postman": "generatePostmanCollection.js"
+    "gen-postman": "generatePostmanCollection.js",
+    "add-auth": "generateAuth.js"
   },
   "scripts": {
     "test": "node generateExpressCrud.js test-project"
@@ -27,7 +28,11 @@
     "rest",
     "expressjs",
     "starter",
-    "template"
+    "template",
+    "authentication",
+    "jwt",
+    "bcrypt",
+    "auth"
   ],
   "author": "DavidChen Benshabbat <benshabbat27@gmail.com>",
   "license": "MIT",
@@ -46,6 +51,7 @@
     "generateExpressCrud.js",
     "addCrudResource.js",
     "generatePostmanCollection.js",
+    "generateAuth.js",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"

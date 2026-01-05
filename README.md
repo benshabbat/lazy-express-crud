@@ -3,18 +3,19 @@
 [![npm version](https://img.shields.io/npm/v/lazy-express-crud.svg)](https://www.npmjs.com/package/lazy-express-crud)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> 🚀 CLI tool to instantly generate a complete Express.js CRUD API with ES6 modules
+> 🚀 CLI tool to instantly generate a complete Express.js CRUD API with authentication, ES6 modules, bcrypt and JWT
 
-Quickly scaffold a production-ready Express.js REST API with full CRUD operations, organized project structure, and best practices built-in.
+Quickly scaffold a production-ready Express.js REST API with full CRUD operations, JWT authentication, password hashing, and best practices built-in.
 
 ## Features
 
 ✨ **Complete CRUD API** - All Create, Read, Update, Delete operations out of the box  
+🔐 **JWT Authentication** - Secure auth with bcrypt password hashing and JWT tokens  
 📁 **Organized Structure** - Clean separation of routes, controllers, and models  
 🎯 **ES6 Modules** - Modern JavaScript with import/export syntax  
-🔒 **Security Built-in** - Input validation and error handling  
+🔒 **Security Built-in** - Input validation, password hashing, and error handling  
 ⚡ **Zero Config** - Start coding immediately  
-➕ **Extensible** - Easily add more resources with `add-crud-resource`  
+➕ **Extensible** - Easily add more resources with `add-crud`  
 🌐 **CORS Enabled** - Ready for frontend integration  
 📦 **Lightweight** - Minimal dependencies
 
@@ -51,6 +52,62 @@ gen-postman
 ```
 
 This creates `postman-collection.json` with all CRUD operations for every resource in your project. Import it to Postman and start testing!
+
+## Authentication Setup
+
+Add secure JWT authentication to your project:
+
+```bash
+cd my-api
+add-auth
+```
+
+This automatically creates:
+- ✅ User model with bcrypt password hashing
+- ✅ Auth controller with JWT token generation
+- ✅ Auth routes (register, login, me)
+- ✅ Auth middleware for protected routes
+- ✅ Updates server.js with auth routes
+- ✅ Adds JWT_SECRET to .env
+
+### Authentication Endpoints
+
+| Method | Endpoint | Description | Protected |
+|--------|----------|-------------|-----------|
+| POST | `/api/auth/register` | Register new user | No |
+| POST | `/api/auth/login` | Login user | No |
+| GET | `/api/auth/me` | Get current user | Yes |
+
+### Example Auth Requests
+
+```bash
+# Register new user
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"john","email":"john@example.com","password":"secret123"}'
+
+# Login
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"john@example.com","password":"secret123"}'
+
+# Access protected route (use token from login response)
+curl http://localhost:3000/api/auth/me \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Protecting Your Routes
+
+Use the auth middleware to protect any route:
+
+```javascript
+import { authMiddleware } from './middlewares/authMiddleware.js';
+
+// Protected route example
+router.get('/protected', authMiddleware, yourController);
+```
+
+The middleware adds `req.userId` to access the authenticated user's ID.
 
 ## Adding More Resources
 
@@ -127,7 +184,11 @@ The generated project uses environment variables. Edit `.env`:
 ```env
 PORT=3000
 NODE_ENV=development
+JWT_SECRET=your-secret-key-here  # Generated automatically by add-auth
+JWT_EXPIRES_IN=24h               # Token expiration time
 ```
+
+⚠️ **Important:** Always change the JWT_SECRET to a secure random value in production!
 
 ## Scripts
 
@@ -136,6 +197,9 @@ NODE_ENV=development
 
 ## Security Features
 
+✅ JWT authentication with secure token generation  
+✅ Password hashing with bcrypt (10 rounds)  
+✅ Token verification and expiration  
 ✅ Project name validation (prevents path traversal and injection)  
 ✅ Length limits to prevent DoS attacks  
 ✅ Reserved name checking (node_modules, .git, etc.)  
@@ -144,7 +208,8 @@ NODE_ENV=development
 ✅ Character whitelist validation  
 ✅ Error handling middleware  
 ✅ Input validation in all controllers  
-✅ Automatic server.js updates with safety checks
+✅ Automatic server.js updates with safety checks  
+✅ Protected routes with auth middleware
 
 ## Database Integration
 
@@ -197,6 +262,24 @@ gen-postman
 
 This scans your routes and creates `postman-collection.json` with all CRUD endpoints.
 
+### add-auth
+
+Adds JWT authentication to your existing project (must be run from project root)
+
+**Example:**
+```bash
+add-auth
+```
+
+This creates:
+- User model with bcrypt password hashing
+- Auth controller with JWT
+- Auth routes and middleware
+- Updates server.js
+- Adds JWT configuration to .env
+
+**Note:** Installs `bcryptjs` and `jsonwebtoken` - remember to run `npm install` after.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -215,7 +298,7 @@ MIT © 2026
 
 ## Keywords
 
-express, crud, api, generator, cli, scaffold, boilerplate, rest-api, es6-modules, nodejs, backend
+express, crud, api, generator, cli, scaffold, boilerplate, rest-api, es6-modules, nodejs, backend, authentication, jwt, bcrypt, auth
 
 ---
 

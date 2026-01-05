@@ -7,10 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-01-05
+
 ### Added
-- Postman Collection generator (`gen-postman` command)
-- Automatic server.js updates when adding resources
-- Security enhancements across all scripts
+- **JWT Authentication System** with `add-auth` command
+- User model with bcrypt password hashing (10 rounds)
+- Auth controller with register, login, and get current user endpoints
+- Auth routes: `/api/auth/register`, `/api/auth/login`, `/api/auth/me`
+- Auth middleware for protecting routes
+- Automatic server.js updates with auth routes
+- JWT configuration in .env (JWT_SECRET, JWT_EXPIRES_IN)
+- Automatic installation of bcryptjs and jsonwebtoken dependencies
+- Comprehensive input validation for auth endpoints
+- Token verification and expiration handling
+- Protected route example in documentation
+
+### Changed
+- Package description to include authentication features
+- README with authentication setup guide and examples
+- Added auth-related keywords: authentication, jwt, bcrypt, auth
+
+### Security
+- bcrypt password hashing with 10 salt rounds
+- JWT token generation with configurable expiration
+- Token verification in auth middleware
+- Password length validation (6-128 characters)
+- Email and username validation
+- User not found handling without information leakage
+- Automatic random JWT_SECRET generation
 
 ## [1.0.3] - 2026-01-05
 

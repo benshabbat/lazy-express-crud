@@ -1,5 +1,5 @@
 {
-  "name": "test-app",
+  "name": "auth-test",
   "version": "1.0.0",
   "description": "Express CRUD API",
   "main": "src/server.js",
