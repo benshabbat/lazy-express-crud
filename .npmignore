@@ -3,8 +3,14 @@ node_modules/
 
 # Ignore test projects created during testing
 test-project/
+test-app/
+demo-app/
 my-api/
 express-crud-app/
+
+# Ignore git files
+.git/
+.gitignore
 
 # Ignore OS files
 .DS_Store
