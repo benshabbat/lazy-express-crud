@@ -54,6 +54,8 @@
     "generateAuth.js",
     "README.md",
     "CHANGELOG.md",
+    "SECURITY-AUDIT.md",
+    "TESTING-GUIDE.md",
     "LICENSE"
   ]
 }
