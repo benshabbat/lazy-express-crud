@@ -1,0 +1,50 @@
+{
+  "name": "create-express-crud",
+  "version": "1.0.0",
+  "description": "CLI tool to instantly generate a complete Express.js CRUD API with ES6 modules",
+  "main": "generateExpressCrud.js",
+  "type": "commonjs",
+  "bin": {
+    "create-express-crud": "./generateExpressCrud.js",
+    "add-crud-resource": "./addCrudResource.js"
+  },
+  "scripts": {
+    "test": "node generateExpressCrud.js test-project"
+  },
+  "keywords": [
+    "express",
+    "crud",
+    "api",
+    "generator",
+    "cli",
+    "scaffold",
+    "boilerplate",
+    "rest-api",
+    "es6-modules",
+    "nodejs",
+    "backend",
+    "rest",
+    "expressjs",
+    "starter",
+    "template"
+  ],
+  "author": "DavidChen Benshabbat <benshabbat27@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benshabbat/scriptsForJs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/benshabbat/scriptsForJs/issues"
+  },
+  "homepage": "https://github.com/benshabbat/scriptsForJs#readme",
+  "files": [
+    "generateExpressCrud.js",
+    "addCrudResource.js",
+    "README.md",
+    "LICENSE"
+  ]
+}
