@@ -1,6 +1,6 @@
 # my-project
 
-Express CRUD API with MongoDB
+Express CRUD API with In-Memory Storage
 
 ## Installation
 
@@ -8,13 +8,11 @@ Express CRUD API with MongoDB
 npm install
 ```
 
-### Database Setup (MongoDB)
+### Note
 
-1. Install MongoDB on your machine
-2. Start MongoDB service
-3. Update the `MONGODB_URI` in `.env` file if needed
-
-The database will be created automatically when you start the server.
+This project uses in-memory storage for demonstration purposes.
+Data will be lost when the server restarts.
+For production, consider using a real database like MongoDB or MySQL.
 
 ## Usage
 
@@ -91,9 +89,38 @@ my-project/
 ## Technologies
 
 - Express.js - Web framework
-- MongoDB with Mongoose - Database
+- In-Memory Storage (for demo)
+- helmet - Security headers
+- express-rate-limit - Rate limiting protection
 - CORS - Cross-origin resource sharing
 - dotenv - Environment variables
+
+## Security Features
+
+This API includes several security measures:
+
+- **Helmet**: Security headers (XSS, clickjacking, etc.)
+- **Rate Limiting**: 100 requests per 15 minutes per IP
+- **Input Validation**: Type and length validation on all inputs
+- **MongoDB ObjectId Validation**: Prevents NoSQL injection (when using MongoDB)
+- **SQL Parameterized Queries**: Prevents SQL injection (when using MySQL)
+- **Payload Size Limit**: 10MB max to prevent DoS
+- **Error Message Sanitization**: No sensitive data exposed in production
+
+### Production Security Checklist
+
+Before deploying to production:
+
+- [ ] Configure CORS with specific origins
+- [ ] Use strong passwords in production databases
+- [ ] Set NODE_ENV=production
+- [ ] Use HTTPS/TLS
+- [ ] Keep dependencies updated
+- [ ] Use a process manager (PM2)
+- [ ] Set up proper logging
+- [ ] Configure firewall rules
+- [ ] Use secrets management (not .env in production)
+- [ ] Enable database authentication
 
 ## License
 

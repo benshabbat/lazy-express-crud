@@ -1,31 +1,31 @@
-import Item from '../models/Item.js';
+import User from '../models/User.js';
 
-// GET all items
-export const getAllItems = async (req, res) => {
+// GET all users
+export const getAllUsers = async (req, res) => {
     try {
-        const items = Item.getAll();
+        const items = User.getAll();
         res.json({
             success: true,
             count: items.length,
             data: items
         });
     } catch (error) {
-        console.error('Error fetching items:', error);
+        console.error('Error fetching users:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch items'
+            error: 'Failed to fetch users'
         });
     }
 };
 
-// GET item by id
-export const getItemById = async (req, res) => {
+// GET user by id
+export const getUserById = async (req, res) => {
     try {
-        const item = Item.getById(req.params.id);
+        const item = User.getById(req.params.id);
         if (!item) {
             return res.status(404).json({
                 success: false,
-                error: 'Item not found'
+                error: 'User not found'
             });
         }
         res.json({
@@ -33,18 +33,18 @@ export const getItemById = async (req, res) => {
             data: item
         });
     } catch (error) {
-        console.error('Error fetching item:', error);
+        console.error('Error fetching user:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch item'
+            error: 'Failed to fetch user'
         });
     }
 };
 
-// POST create item
-export const createItem = async (req, res) => {
+// POST create user
+export const createUser = async (req, res) => {
     try {
-        const { name, description, price } = req.body;
+        const { name, description } = req.body;
         
         // Input validation
         if (!name || typeof name !== 'string') {
@@ -75,24 +75,24 @@ export const createItem = async (req, res) => {
             });
         }
 
-        const newItem = Item.create({ name, description, price });
+        const newItem = User.create({ name, description });
         res.status(201).json({
             success: true,
             data: newItem
         });
     } catch (error) {
-        console.error('Error creating item:', error);
+        console.error('Error creating user:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to create item'
+            error: 'Failed to create user'
         });
     }
 };
 
-// PUT update item
-export const updateItem = async (req, res) => {
+// PUT update user
+export const updateUser = async (req, res) => {
     try {
-        const { name, description, price } = req.body;
+        const { name, description } = req.body;
         
         // Input validation
         if (name !== undefined) {
@@ -113,12 +113,12 @@ export const updateItem = async (req, res) => {
             }
         }
 
-        const updatedItem = Item.update(req.params.id, { name, description, price });
+        const updatedItem = User.update(req.params.id, { name, description });
         
         if (!updatedItem) {
             return res.status(404).json({
                 success: false,
-                error: 'Item not found'
+                error: 'User not found'
             });
         }
 
@@ -127,35 +127,35 @@ export const updateItem = async (req, res) => {
             data: updatedItem
         });
     } catch (error) {
-        console.error('Error updating item:', error);
+        console.error('Error updating user:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to update item'
+            error: 'Failed to update user'
         });
     }
 };
 
-// DELETE item
-export const deleteItem = async (req, res) => {
+// DELETE user
+export const deleteUser = async (req, res) => {
     try {
-        const deleted = Item.delete(req.params.id);
+        const deleted = User.delete(req.params.id);
         
         if (!deleted) {
             return res.status(404).json({
                 success: false,
-                error: 'Item not found'
+                error: 'User not found'
             });
         }
 
         res.json({
             success: true,
-            message: 'Item deleted successfully'
+            message: 'User deleted successfully'
         });
     } catch (error) {
-        console.error('Error deleting item:', error);
+        console.error('Error deleting user:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to delete item'
+            error: 'Failed to delete user'
         });
     }
 };

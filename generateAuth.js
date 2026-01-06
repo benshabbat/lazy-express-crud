@@ -65,6 +65,13 @@ function createUserModel() {
     throw new Error("Security: Attempted to write outside project directory");
   }
 
+  // Check if User.js already exists
+  if (fs.existsSync(modelPath)) {
+    console.log("⚠ User.js already exists - skipping creation");
+    console.log("  Please add bcrypt and JWT methods to your existing User model");
+    return;
+  }
+
   if (!fs.existsSync(modelDir)) {
     fs.mkdirSync(modelDir, { recursive: true });
   }
@@ -592,7 +599,7 @@ function main() {
 
     console.log("\n✅ Authentication setup complete!\n");
     console.log("📋 What was created:");
-    console.log("  • User model with bcrypt password hashing");
+    console.log("  • User model with bcrypt password hashing (or skipped if exists)");
     console.log("  • Auth controller with JWT token generation");
     console.log("  • Auth routes (register, login, me)");
     console.log("  • Auth middleware for protected routes");
@@ -604,12 +611,14 @@ function main() {
     console.log("  POST   /api/auth/login     - Login user");
     console.log("  GET    /api/auth/me        - Get current user (protected)\n");
     console.log("🔒 To protect your routes:");
-    console.log("  import { authMiddleware } from './middlewares/authMiddleware.js';");
+    console.log("  In your route file, import and use authMiddleware:");
+    console.log("  import { authMiddleware } from '../middlewares/authMiddleware.js';");
     console.log("  router.get('/protected', authMiddleware, yourController);\n");
     console.log("⚠️  Remember to:");
     console.log("  1. Run: npm install");
     console.log("  2. Change JWT_SECRET in .env to a secure value");
-    console.log("  3. Replace in-memory storage with a real database\n");
+    console.log("  3. Replace in-memory storage with a real database");
+    console.log("  4. If User.js existed before, add bcrypt methods manually\n");
   } catch (error) {
     console.error("❌ Error:", error.message);
     process.exit(1);
