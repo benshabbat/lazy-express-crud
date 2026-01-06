@@ -172,6 +172,9 @@ cd my-api
 add-crud User      # Automatically detects your database!
 add-crud Product
 add-crud Category
+
+# Or create multiple at once:
+add-crud User Product Category
 ```
 
 **Smart Detection:**
@@ -184,6 +187,11 @@ add-crud Category
 - ✅ Controller with validation & security
 - ✅ Routes with all CRUD operations
 - ✅ Updates server.js automatically
+
+**Bulk Creation:**
+- ✅ Create multiple resources in one command
+- ✅ Shows progress for each resource
+- ✅ Summary of successful/failed creations
 
 ### Generated Endpoints
 

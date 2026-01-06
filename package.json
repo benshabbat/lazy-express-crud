@@ -60,6 +60,7 @@
   "files": [
     "generateExpressCrud.js",
     "addCrudResource.js",
+    "addCrudResource-single.js",
     "generatePostmanCollection.js",
     "generateAuth.js",
     "README.md",

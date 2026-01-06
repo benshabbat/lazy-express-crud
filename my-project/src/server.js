@@ -6,6 +6,9 @@ import rateLimit from 'express-rate-limit';
 import itemRoutes from './routes/itemRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import authorRoutes from './routes/authorRoutes.js';
+import publisherRoutes from './routes/publisherRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -91,6 +94,9 @@ app.get('/', (req, res) => {
 app.use('/api/items', itemRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/authors', authorRoutes);
+app.use('/api/publishers', publisherRoutes);
+app.use('/api/categorys', categoryRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
