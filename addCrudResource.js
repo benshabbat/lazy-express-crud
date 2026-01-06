@@ -52,6 +52,34 @@ if (!fs.existsSync(srcDir) || !fs.existsSync(packageJsonPath)) {
     process.exit(1);
 }
 
+// Detect database type from package.json
+let dbChoice = 'memory';
+try {
+    if (!fs.existsSync(packageJsonPath)) {
+        console.error('❌ Error: package.json not found at:', packageJsonPath);
+        console.error('Current directory:', currentDir);
+        console.error('Please run this command from your Express CRUD project root directory');
+        process.exit(1);
+    }
+    
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+    const dependencies = packageJson.dependencies || {};
+    
+    if (dependencies.mongoose) {
+        dbChoice = 'mongodb';
+        console.log('✅ Detected: MongoDB (mongoose)');
+    } else if (dependencies.mysql2) {
+        dbChoice = 'mysql';
+        console.log('✅ Detected: MySQL (mysql2)');
+    } else {
+        console.log('ℹ️  No database detected, using in-memory storage');
+    }
+} catch (error) {
+    console.error('❌ Error reading package.json:', error.message);
+    console.error('Current directory:', currentDir);
+    process.exit(1);
+}
+
 // Generate names
 const resourceLower = resourceName.toLowerCase();
 const resourcePlural = resourceLower + 's';
@@ -68,8 +96,107 @@ if (fs.existsSync(modelPath)) {
     process.exit(1);
 }
 
-// Model template
-const modelTemplate = `// In-memory data storage for ${resourceName}
+// Model template based on database choice
+const getModelTemplate = () => {
+    if (dbChoice === 'mongodb') {
+        return `import mongoose from 'mongoose';
+
+const ${resourceLower}Schema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: [true, 'Name is required'],
+        trim: true
+    },
+    description: {
+        type: String,
+        trim: true,
+        default: ''
+    }
+}, {
+    timestamps: true
+});
+
+const ${resourceName} = mongoose.model('${resourceName}', ${resourceLower}Schema);
+
+export default ${resourceName};
+`;
+    } else if (dbChoice === 'mysql') {
+        return `import { db } from '../server.js';
+
+class ${resourceName} {
+    static async getAll() {
+        const [rows] = await db.query('SELECT * FROM ${resourcePlural} ORDER BY created_at DESC');
+        return rows;
+    }
+
+    static async getById(id) {
+        const [rows] = await db.query('SELECT * FROM ${resourcePlural} WHERE id = ?', [id]);
+        return rows[0];
+    }
+
+    static async create(data) {
+        const { name, description } = data;
+        const [result] = await db.query(
+            'INSERT INTO ${resourcePlural} (name, description) VALUES (?, ?)',
+            [name, description || '']
+        );
+        return {
+            id: result.insertId,
+            name,
+            description: description || ''
+        };
+    }
+
+    static async update(id, data) {
+        const { name, description } = data;
+        const updates = [];
+        const values = [];
+        
+        if (name !== undefined) {
+            updates.push('name = ?');
+            values.push(name);
+        }
+        if (description !== undefined) {
+            updates.push('description = ?');
+            values.push(description);
+        }
+        
+        if (updates.length === 0) return null;
+        
+        values.push(id);
+        const [result] = await db.query(
+            \`UPDATE ${resourcePlural} SET \${updates.join(', ')} WHERE id = ?\`,
+            values
+        );
+        
+        if (result.affectedRows === 0) return null;
+        return await ${resourceName}.getById(id);
+    }
+
+    static async delete(id) {
+        const [result] = await db.query('DELETE FROM ${resourcePlural} WHERE id = ?', [id]);
+        return result.affectedRows > 0;
+    }
+
+    // Helper method to initialize the table
+    static async initTable() {
+        await db.query(\`
+            CREATE TABLE IF NOT EXISTS ${resourcePlural} (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        \`);
+    }
+}
+
+export default ${resourceName};
+`;
+    } else {
+        // In-memory storage
+        return `// In-memory data storage for ${resourceName}
 // In production, use a real database like MongoDB, PostgreSQL, etc.
 
 let ${resourcePlural} = [
@@ -131,31 +258,44 @@ class ${resourceName} {
 
 export default ${resourceName};
 `;
+    }
+};
 
-// Controller template
-const controllerTemplate = `import ${resourceName} from '../models/${modelFileName}';
-
+// Controller template based on database choice
+const getControllerTemplate = () => {
+    const isAsync = dbChoice === 'mongodb' || dbChoice === 'mysql';
+    
+    return `import ${resourceName} from '../models/${modelFileName}';
+${dbChoice === 'mongodb' ? "import mongoose from 'mongoose';\n" : ''}
 // GET all ${resourcePlural}
-export const getAll${resourceName}s = (req, res) => {
+export const getAll${resourceName}s = async (req, res) => {
     try {
-        const items = ${resourceName}.getAll();
+        const items = ${isAsync ? 'await ' : ''}${resourceName}.${dbChoice === 'mongodb' ? 'find()' : 'getAll()'};
         res.json({
             success: true,
             count: items.length,
             data: items
         });
     } catch (error) {
+        console.error('Error fetching ${resourcePlural}:', error);
         res.status(500).json({
             success: false,
-            error: error.message
+            error: 'Failed to fetch ${resourcePlural}'
         });
     }
 };
 
 // GET ${resourceLower} by id
-export const get${resourceName}ById = (req, res) => {
+export const get${resourceName}ById = async (req, res) => {
     try {
-        const item = ${resourceName}.getById(req.params.id);
+        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid ID format'
+            });
+        }
+        ` : ''}const item = ${isAsync ? 'await ' : ''}${resourceName}.${dbChoice === 'mongodb' ? 'findById(req.params.id)' : 'getById(req.params.id)'};
         if (!item) {
             return res.status(404).json({
                 success: false,
@@ -167,43 +307,101 @@ export const get${resourceName}ById = (req, res) => {
             data: item
         });
     } catch (error) {
+        console.error('Error fetching ${resourceLower}:', error);
         res.status(500).json({
             success: false,
-            error: error.message
+            error: 'Failed to fetch ${resourceLower}'
         });
     }
 };
 
 // POST create ${resourceLower}
-export const create${resourceName} = (req, res) => {
+export const create${resourceName} = async (req, res) => {
     try {
         const { name, description } = req.body;
         
-        if (!name) {
+        // Input validation
+        if (!name || typeof name !== 'string') {
             return res.status(400).json({
                 success: false,
-                error: 'Name is required'
+                error: 'Name is required and must be a string'
             });
         }
 
-        const newItem = ${resourceName}.create({ name, description });
+        if (name.length > 255) {
+            return res.status(400).json({
+                success: false,
+                error: 'Name must be less than 255 characters'
+            });
+        }
+
+        if (description && typeof description !== 'string') {
+            return res.status(400).json({
+                success: false,
+                error: 'Description must be a string'
+            });
+        }
+
+        if (description && description.length > 2000) {
+            return res.status(400).json({
+                success: false,
+                error: 'Description must be less than 2000 characters'
+            });
+        }
+
+        const newItem = ${isAsync ? 'await ' : ''}${resourceName}.create({ name, description });
         res.status(201).json({
             success: true,
             data: newItem
         });
     } catch (error) {
+        console.error('Error creating ${resourceLower}:', error);
         res.status(500).json({
             success: false,
-            error: error.message
+            error: 'Failed to create ${resourceLower}'
         });
     }
 };
 
 // PUT update ${resourceLower}
-export const update${resourceName} = (req, res) => {
+export const update${resourceName} = async (req, res) => {
     try {
-        const { name, description } = req.body;
-        const updatedItem = ${resourceName}.update(req.params.id, { name, description });
+        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid ID format'
+            });
+        }
+        ` : ''}const { name, description } = req.body;
+        
+        // Input validation
+        if (name !== undefined) {
+            if (typeof name !== 'string' || name.length > 255) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Name must be a string with max 255 characters'
+                });
+            }
+        }
+
+        if (description !== undefined) {
+            if (typeof description !== 'string' || description.length > 2000) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Description must be a string with max 2000 characters'
+                });
+            }
+        }
+
+        ${dbChoice === 'mongodb' ? 
+            `const updatedItem = await ${resourceName}.findByIdAndUpdate(
+            req.params.id, 
+            { name, description },
+            { new: true, runValidators: true }
+        );` : 
+            `const updatedItem = ${isAsync ? 'await ' : ''}${resourceName}.update(req.params.id, { name, description });`
+        }
         
         if (!updatedItem) {
             return res.status(404).json({
@@ -217,19 +415,32 @@ export const update${resourceName} = (req, res) => {
             data: updatedItem
         });
     } catch (error) {
+        console.error('Error updating ${resourceLower}:', error);
         res.status(500).json({
             success: false,
-            error: error.message
+            error: 'Failed to update ${resourceLower}'
         });
     }
 };
 
 // DELETE ${resourceLower}
-export const delete${resourceName} = (req, res) => {
+export const delete${resourceName} = async (req, res) => {
     try {
-        const deleted = ${resourceName}.delete(req.params.id);
+        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid ID format'
+            });
+        }
+        ` : ''}${dbChoice === 'mongodb' ? 
+            `const deleted = await ${resourceName}.findByIdAndDelete(req.params.id);
         
-        if (!deleted) {
+        if (!deleted) {` : 
+            `const deleted = ${isAsync ? 'await ' : ''}${resourceName}.delete(req.params.id);
+        
+        if (!deleted) {`
+        }
             return res.status(404).json({
                 success: false,
                 error: '${resourceName} not found'
@@ -241,13 +452,15 @@ export const delete${resourceName} = (req, res) => {
             message: '${resourceName} deleted successfully'
         });
     } catch (error) {
+        console.error('Error deleting ${resourceLower}:', error);
         res.status(500).json({
             success: false,
-            error: error.message
+            error: 'Failed to delete ${resourceLower}'
         });
     }
 };
 `;
+};
 
 // Routes template
 const routesTemplate = `import express from 'express';
@@ -277,12 +490,12 @@ export default router;
 const files = [
     { 
         path: path.join(srcDir, 'models', modelFileName), 
-        content: modelTemplate,
+        content: getModelTemplate(),
         type: 'Model'
     },
     { 
         path: path.join(srcDir, 'controllers', controllerFileName), 
-        content: controllerTemplate,
+        content: getControllerTemplate(),
         type: 'Controller'
     },
     { 
@@ -351,4 +564,17 @@ console.log(`   GET    /api/${resourcePlural}/:id  - Get ${resourceLower} by id`
 console.log(`   POST   /api/${resourcePlural}      - Create ${resourceLower}`);
 console.log(`   PUT    /api/${resourcePlural}/:id  - Update ${resourceLower}`);
 console.log(`   DELETE /api/${resourcePlural}/:id  - Delete ${resourceLower}`);
+
+if (dbChoice === 'mysql') {
+    console.log('\n💡 MySQL Note:');
+    console.log(`   You may need to create the table manually:`);
+    console.log(`   CREATE TABLE ${resourcePlural} (`);
+    console.log(`       id INT AUTO_INCREMENT PRIMARY KEY,`);
+    console.log(`       name VARCHAR(255) NOT NULL,`);
+    console.log(`       description TEXT,`);
+    console.log(`       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,`);
+    console.log(`       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
+    console.log(`   );`);
+}
+
 console.log('');

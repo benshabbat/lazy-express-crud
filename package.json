@@ -1,7 +1,7 @@
 {
   "name": "lazy-express-crud",
-  "version": "1.1.0",
-  "description": "CLI tool to instantly generate a complete Express.js CRUD API with authentication, ES6 modules, bcrypt and JWT",
+  "version": "1.2.0",
+  "description": "Production-ready Express.js CRUD API generator with MongoDB/MySQL support, JWT authentication, and enterprise-grade security (9.5/10 security score)",
   "main": "generateExpressCrud.js",
   "type": "commonjs",
   "bin": {
@@ -32,7 +32,17 @@
     "authentication",
     "jwt",
     "bcrypt",
-    "auth"
+    "auth",
+    "mongodb",
+    "mongoose",
+    "mysql",
+    "mysql2",
+    "security",
+    "helmet",
+    "rate-limiting",
+    "injection-prevention",
+    "validation",
+    "production-ready"
   ],
   "author": "DavidChen Benshabbat <benshabbat27@gmail.com>",
   "license": "MIT",

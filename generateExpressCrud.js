@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const readline = require('readline');
 
 // Get project name from command line arguments
 const projectName = process.argv[2] || 'express-crud-app';
@@ -47,6 +48,36 @@ function validateProjectName(name) {
 // Validate the project name
 validateProjectName(projectName);
 
+// Function to ask user for database choice
+function askDatabaseChoice() {
+    return new Promise((resolve) => {
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+
+        console.log('\n📊 Choose your database:');
+        console.log('1. MongoDB (NoSQL)');
+        console.log('2. MySQL (SQL)');
+        console.log('3. In-Memory (No database - for demo)');
+        
+        rl.question('\nEnter your choice (1/2/3): ', (answer) => {
+            rl.close();
+            const choice = answer.trim();
+            if (choice === '1') {
+                resolve('mongodb');
+            } else if (choice === '2') {
+                resolve('mysql');
+            } else if (choice === '3') {
+                resolve('memory');
+            } else {
+                console.log('Invalid choice. Using in-memory storage as default.');
+                resolve('memory');
+            }
+        });
+    });
+}
+
 // Create project directory
 const projectPath = path.join(process.cwd(), projectName);
 
@@ -56,7 +87,13 @@ if (fs.existsSync(projectPath)) {
     process.exit(1);
 }
 
-console.log(`🚀 Creating Express CRUD project: ${projectName}`);
+// Main async function
+async function createProject() {
+    // Ask for database choice
+    const dbChoice = await askDatabaseChoice();
+    
+    console.log(`\n🚀 Creating Express CRUD project: ${projectName}`);
+    console.log(`📊 Database: ${dbChoice === 'mongodb' ? 'MongoDB' : dbChoice === 'mysql' ? 'MySQL' : 'In-Memory'}`);
 
 // Create directory structure
 const directories = [
@@ -80,7 +117,7 @@ directories.forEach(dir => {
     }
 });
 
-// package.json template
+// package.json template based on database choice
 const packageJson = {
     name: projectName,
     version: '1.0.0',
@@ -97,31 +134,99 @@ const packageJson = {
     dependencies: {
         express: '^4.18.2',
         cors: '^2.8.5',
-        dotenv: '^16.3.1'
+        dotenv: '^16.3.1',
+        helmet: '^7.1.0',
+        'express-rate-limit': '^7.1.5',
+        ...(dbChoice === 'mongodb' && { mongoose: '^8.0.3' }),
+        ...(dbChoice === 'mysql' && { mysql2: '^3.6.5' })
     },
     devDependencies: {
         nodemon: '^3.0.1'
     }
 };
 
-// server.js template
-const serverTemplate = `import 'dotenv/config';
+// server.js template based on database choice
+const getServerTemplate = (dbChoice) => {
+    const mongoConnection = dbChoice === 'mongodb' ? `
+import mongoose from 'mongoose';
+
+// MongoDB Connection
+const connectDB = async () => {
+    try {
+        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/${projectName}');
+        console.log('✅ MongoDB connected successfully');
+    } catch (error) {
+        console.error('❌ MongoDB connection error:', error);
+        process.exit(1);
+    }
+};
+
+connectDB();
+` : '';
+
+    const mysqlConnection = dbChoice === 'mysql' ? `
+import mysql from 'mysql2/promise';
+
+// MySQL Connection Pool
+export const db = mysql.createPool({
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || '${projectName}',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});
+
+// Test connection
+db.getConnection()
+    .then(connection => {
+        console.log('✅ MySQL connected successfully');
+        connection.release();
+    })
+    .catch(err => {
+        console.error('❌ MySQL connection error:', err);
+        process.exit(1);
+    });
+` : '';
+
+    return `import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import itemRoutes from './routes/itemRoutes.js';
-
+${dbChoice === 'mongodb' ? "import mongoose from 'mongoose';\n" : ''}${dbChoice === 'mysql' ? "import mysql from 'mysql2/promise';\n" : ''}
 const app = express();
 const PORT = process.env.PORT || 3000;
+${mongoConnection}${mysqlConnection}
+// Security Middleware
+app.use(helmet()); // Security headers
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.use(limiter);
+
+// CORS configuration
+// Production: configure with specific origins
+// app.use(cors({ origin: 'https://yourdomain.com' }));
+app.use(cors()); // Development: allows all origins
+
+// Body parser middleware
+app.use(express.json({ limit: '10mb' })); // Limit payload size
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Routes
 app.get('/', (req, res) => {
     res.json({ 
         message: 'Welcome to Express CRUD API',
+        database: '${dbChoice === 'mongodb' ? 'MongoDB' : dbChoice === 'mysql' ? 'MySQL' : 'In-Memory'}',
         endpoints: {
             'GET /api/items': 'Get all items',
             'GET /api/items/:id': 'Get item by id',
@@ -137,16 +242,26 @@ app.use('/api/items', itemRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({ error: 'Something went wrong!' });
+    
+    // Don't expose error details in production
+    const errorMessage = process.env.NODE_ENV === 'production' 
+        ? 'Something went wrong!' 
+        : err.message;
+    
+    res.status(err.status || 500).json({ 
+        error: errorMessage 
+    });
 });
 
 // Start server
 app.listen(PORT, () => {
     console.log(\`🚀 Server is running on http://localhost:\${PORT}\`);
+    console.log(\`Environment: \${process.env.NODE_ENV || 'development'}\`);
 });
 
 export default app;
 `;
+};
 
 // itemRoutes.js template
 const routesTemplate = `import express from 'express';
@@ -172,30 +287,41 @@ router.delete('/:id', itemController.deleteItem);
 export default router;
 `;
 
-// itemController.js template
-const controllerTemplate = `import Item from '../models/Item.js';
-
+// itemController.js template based on database choice
+const getControllerTemplate = (dbChoice) => {
+    const isAsync = dbChoice === 'mongodb' || dbChoice === 'mysql';
+    
+    return `import Item from '../models/Item.js';
+${dbChoice === 'mongodb' ? "import mongoose from 'mongoose';\n" : ''}
 // GET all items
-export const getAllItems = (req, res) => {
+export const getAllItems = async (req, res) => {
     try {
-        const items = Item.getAll();
+        const items = ${isAsync ? 'await ' : ''}Item.${dbChoice === 'mongodb' ? 'find()' : 'getAll()'};
         res.json({
             success: true,
             count: items.length,
             data: items
         });
     } catch (error) {
+        console.error('Error fetching items:', error);
         res.status(500).json({
             success: false,
-            error: error.message
+            error: 'Failed to fetch items'
         });
     }
 };
 
 // GET item by id
-export const getItemById = (req, res) => {
+export const getItemById = async (req, res) => {
     try {
-        const item = Item.getById(req.params.id);
+        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid ID format'
+            });
+        }
+        ` : ''}const item = ${isAsync ? 'await ' : ''}Item.${dbChoice === 'mongodb' ? 'findById(req.params.id)' : 'getById(req.params.id)'};
         if (!item) {
             return res.status(404).json({
                 success: false,
@@ -207,44 +333,101 @@ export const getItemById = (req, res) => {
             data: item
         });
     } catch (error) {
+        console.error('Error fetching item:', error);
         res.status(500).json({
             success: false,
-            error: error.message
+            error: 'Failed to fetch item'
         });
     }
 };
 
 // POST create item
-export const createItem = (req, res) => {
+export const createItem = async (req, res) => {
     try {
         const { name, description, price } = req.body;
         
-        // Validation
-        if (!name) {
+        // Input validation
+        if (!name || typeof name !== 'string') {
             return res.status(400).json({
                 success: false,
-                error: 'Name is required'
+                error: 'Name is required and must be a string'
             });
         }
 
-        const newItem = Item.create({ name, description, price });
+        if (name.length > 255) {
+            return res.status(400).json({
+                success: false,
+                error: 'Name must be less than 255 characters'
+            });
+        }
+
+        if (description && typeof description !== 'string') {
+            return res.status(400).json({
+                success: false,
+                error: 'Description must be a string'
+            });
+        }
+
+        if (description && description.length > 2000) {
+            return res.status(400).json({
+                success: false,
+                error: 'Description must be less than 2000 characters'
+            });
+        }
+
+        const newItem = ${isAsync ? 'await ' : ''}Item.create({ name, description, price });
         res.status(201).json({
             success: true,
             data: newItem
         });
     } catch (error) {
+        console.error('Error creating item:', error);
         res.status(500).json({
             success: false,
-            error: error.message
+            error: 'Failed to create item'
         });
     }
 };
 
 // PUT update item
-export const updateItem = (req, res) => {
+export const updateItem = async (req, res) => {
     try {
-        const { name, description, price } = req.body;
-        const updatedItem = Item.update(req.params.id, { name, description, price });
+        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid ID format'
+            });
+        }
+        ` : ''}const { name, description, price } = req.body;
+        
+        // Input validation
+        if (name !== undefined) {
+            if (typeof name !== 'string' || name.length > 255) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Name must be a string with max 255 characters'
+                });
+            }
+        }
+
+        if (description !== undefined) {
+            if (typeof description !== 'string' || description.length > 2000) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Description must be a string with max 2000 characters'
+                });
+            }
+        }
+
+        ${dbChoice === 'mongodb' ? 
+            `const updatedItem = await Item.findByIdAndUpdate(
+            req.params.id, 
+            { name, description, price },
+            { new: true, runValidators: true }
+        );` : 
+            `const updatedItem = ${isAsync ? 'await ' : ''}Item.update(req.params.id, { name, description, price });`
+        }
         
         if (!updatedItem) {
             return res.status(404).json({
@@ -258,19 +441,32 @@ export const updateItem = (req, res) => {
             data: updatedItem
         });
     } catch (error) {
+        console.error('Error updating item:', error);
         res.status(500).json({
             success: false,
-            error: error.message
+            error: 'Failed to update item'
         });
     }
 };
 
 // DELETE item
-export const deleteItem = (req, res) => {
+export const deleteItem = async (req, res) => {
     try {
-        const deleted = Item.delete(req.params.id);
+        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid ID format'
+            });
+        }
+        ` : ''}${dbChoice === 'mongodb' ? 
+            `const deleted = await Item.findByIdAndDelete(req.params.id);
         
-        if (!deleted) {
+        if (!deleted) {` : 
+            `const deleted = ${isAsync ? 'await ' : ''}Item.delete(req.params.id);
+        
+        if (!deleted) {`
+        }
             return res.status(404).json({
                 success: false,
                 error: 'Item not found'
@@ -282,16 +478,128 @@ export const deleteItem = (req, res) => {
             message: 'Item deleted successfully'
         });
     } catch (error) {
+        console.error('Error deleting item:', error);
         res.status(500).json({
             success: false,
-            error: error.message
+            error: 'Failed to delete item'
         });
     }
 };
 `;
+};
 
-// Item.js model template (In-memory storage)
-const modelTemplate = `// In-memory data storage (for demo purposes)
+// Item.js model template based on database choice
+const getModelTemplate = (dbChoice) => {
+    if (dbChoice === 'mongodb') {
+        return `import mongoose from 'mongoose';
+
+const itemSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: [true, 'Name is required'],
+        trim: true
+    },
+    description: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    price: {
+        type: Number,
+        default: 0,
+        min: [0, 'Price cannot be negative']
+    }
+}, {
+    timestamps: true
+});
+
+const Item = mongoose.model('Item', itemSchema);
+
+export default Item;
+`;
+    } else if (dbChoice === 'mysql') {
+        return `import { db } from '../server.js';
+
+class Item {
+    static async getAll() {
+        const [rows] = await db.query('SELECT * FROM items ORDER BY created_at DESC');
+        return rows;
+    }
+
+    static async getById(id) {
+        const [rows] = await db.query('SELECT * FROM items WHERE id = ?', [id]);
+        return rows[0];
+    }
+
+    static async create(data) {
+        const { name, description, price } = data;
+        const [result] = await db.query(
+            'INSERT INTO items (name, description, price) VALUES (?, ?, ?)',
+            [name, description || '', price || 0]
+        );
+        return {
+            id: result.insertId,
+            name,
+            description: description || '',
+            price: price || 0
+        };
+    }
+
+    static async update(id, data) {
+        const { name, description, price } = data;
+        const updates = [];
+        const values = [];
+        
+        if (name !== undefined) {
+            updates.push('name = ?');
+            values.push(name);
+        }
+        if (description !== undefined) {
+            updates.push('description = ?');
+            values.push(description);
+        }
+        if (price !== undefined) {
+            updates.push('price = ?');
+            values.push(price);
+        }
+        
+        if (updates.length === 0) return null;
+        
+        values.push(id);
+        const [result] = await db.query(
+            \`UPDATE items SET \${updates.join(', ')} WHERE id = ?\`,
+            values
+        );
+        
+        if (result.affectedRows === 0) return null;
+        return await Item.getById(id);
+    }
+
+    static async delete(id) {
+        const [result] = await db.query('DELETE FROM items WHERE id = ?', [id]);
+        return result.affectedRows > 0;
+    }
+
+    // Helper method to initialize the table
+    static async initTable() {
+        await db.query(\`
+            CREATE TABLE IF NOT EXISTS items (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                description TEXT,
+                price DECIMAL(10, 2) DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        \`);
+    }
+}
+
+export default Item;
+`;
+    } else {
+        // In-memory storage
+        return `// In-memory data storage (for demo purposes)
 // In production, use a real database like MongoDB, PostgreSQL, etc.
 
 let items = [
@@ -345,11 +653,39 @@ class Item {
 
 export default Item;
 `;
+    }
+};
 
-// .env template
-const envTemplate = `PORT=3000
+// .env template based on database choice
+const getEnvTemplate = (dbChoice) => {
+    let template = `PORT=3000
 NODE_ENV=development
 `;
+    
+    if (dbChoice === 'mongodb') {
+        template += `
+# MongoDB Connection
+# Development:
+MONGODB_URI=mongodb://localhost:27017/${projectName}
+
+# Production (with authentication):
+# MONGODB_URI=mongodb://username:password@host:port/${projectName}?authSource=admin
+`;
+    } else if (dbChoice === 'mysql') {
+        template += `
+# MySQL Connection
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=${projectName}
+
+# Production: Use environment variables and strong passwords!
+# Never commit .env files to git!
+`;
+    }
+    
+    return template;
+};
 
 // .gitignore template
 const gitignoreTemplate = `node_modules/
@@ -358,17 +694,58 @@ const gitignoreTemplate = `node_modules/
 *.log
 `;
 
-// README.md template
-const readmeTemplate = `# ${projectName}
+// README.md template based on database choice
+const getReadmeTemplate = (dbChoice) => {
+    const dbSetup = dbChoice === 'mongodb' ? `
+### Database Setup (MongoDB)
 
-Express CRUD API generated automatically
+1. Install MongoDB on your machine
+2. Start MongoDB service
+3. Update the \`MONGODB_URI\` in \`.env\` file if needed
+
+The database will be created automatically when you start the server.
+` : dbChoice === 'mysql' ? `
+### Database Setup (MySQL)
+
+1. Install MySQL on your machine
+2. Create a database:
+\`\`\`sql
+CREATE DATABASE ${projectName};
+\`\`\`
+
+3. Update the database credentials in \`.env\` file
+
+4. Run the table initialization (the table will be created automatically on first run, or you can create it manually):
+\`\`\`sql
+USE ${projectName};
+
+CREATE TABLE items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+\`\`\`
+` : `
+### Note
+
+This project uses in-memory storage for demonstration purposes.
+Data will be lost when the server restarts.
+For production, consider using a real database like MongoDB or MySQL.
+`;
+
+    return `# ${projectName}
+
+Express CRUD API with ${dbChoice === 'mongodb' ? 'MongoDB' : dbChoice === 'mysql' ? 'MySQL' : 'In-Memory Storage'}
 
 ## Installation
 
 \`\`\`bash
 npm install
 \`\`\`
-
+${dbSetup}
 ## Usage
 
 ### Development mode with auto-reload:
@@ -441,22 +818,58 @@ ${projectName}/
 └── README.md
 \`\`\`
 
-## Note
+## Technologies
 
-This project uses in-memory storage for demonstration purposes. 
-For production, integrate a real database like MongoDB, PostgreSQL, or MySQL.
+- Express.js - Web framework
+- ${dbChoice === 'mongodb' ? 'MongoDB with Mongoose - Database' : dbChoice === 'mysql' ? 'MySQL - Database' : 'In-Memory Storage (for demo)'}
+- helmet - Security headers
+- express-rate-limit - Rate limiting protection
+- CORS - Cross-origin resource sharing
+- dotenv - Environment variables
+
+## Security Features
+
+This API includes several security measures:
+
+- **Helmet**: Security headers (XSS, clickjacking, etc.)
+- **Rate Limiting**: 100 requests per 15 minutes per IP
+- **Input Validation**: Type and length validation on all inputs
+- **MongoDB ObjectId Validation**: Prevents NoSQL injection${dbChoice === 'mongodb' ? '' : ' (when using MongoDB)'}
+- **SQL Parameterized Queries**: Prevents SQL injection${dbChoice === 'mysql' ? '' : ' (when using MySQL)'}
+- **Payload Size Limit**: 10MB max to prevent DoS
+- **Error Message Sanitization**: No sensitive data exposed in production
+
+### Production Security Checklist
+
+Before deploying to production:
+
+- [ ] Configure CORS with specific origins
+- [ ] Use strong passwords in production databases
+- [ ] Set NODE_ENV=production
+- [ ] Use HTTPS/TLS
+- [ ] Keep dependencies updated
+- [ ] Use a process manager (PM2)
+- [ ] Set up proper logging
+- [ ] Configure firewall rules
+- [ ] Use secrets management (not .env in production)
+- [ ] Enable database authentication
+
+## License
+
+ISC
 `;
+};
 
 // Write all files
 const files = [
     { path: path.join(projectPath, 'package.json'), content: JSON.stringify(packageJson, null, 2) },
-    { path: path.join(projectPath, 'src', 'server.js'), content: serverTemplate },
+    { path: path.join(projectPath, 'src', 'server.js'), content: getServerTemplate(dbChoice) },
     { path: path.join(projectPath, 'src', 'routes', 'itemRoutes.js'), content: routesTemplate },
-    { path: path.join(projectPath, 'src', 'controllers', 'itemController.js'), content: controllerTemplate },
-    { path: path.join(projectPath, 'src', 'models', 'Item.js'), content: modelTemplate },
-    { path: path.join(projectPath, '.env'), content: envTemplate },
+    { path: path.join(projectPath, 'src', 'controllers', 'itemController.js'), content: getControllerTemplate(dbChoice) },
+    { path: path.join(projectPath, 'src', 'models', 'Item.js'), content: getModelTemplate(dbChoice) },
+    { path: path.join(projectPath, '.env'), content: getEnvTemplate(dbChoice) },
     { path: path.join(projectPath, '.gitignore'), content: gitignoreTemplate },
-    { path: path.join(projectPath, 'README.md'), content: readmeTemplate }
+    { path: path.join(projectPath, 'README.md'), content: getReadmeTemplate(dbChoice) }
 ];
 
 files.forEach(file => {
@@ -469,13 +882,35 @@ files.forEach(file => {
     }
 });
 
-console.log(`
-✨ Project created successfully!
-
-Next steps:
+const nextSteps = dbChoice === 'mongodb' ? `
+  1. cd ${projectName}
+  2. npm install
+  3. Make sure MongoDB is running
+  4. npm run dev
+` : dbChoice === 'mysql' ? `
+  1. cd ${projectName}
+  2. npm install
+  3. Create MySQL database: CREATE DATABASE ${projectName};
+  4. Update .env file with your MySQL credentials
+  5. npm run dev (tables will be created automatically)
+` : `
   1. cd ${projectName}
   2. npm install
   3. npm run dev
+`;
 
+console.log(`
+✨ Project created successfully!
+
+Database: ${dbChoice === 'mongodb' ? '🍃 MongoDB' : dbChoice === 'mysql' ? '🐬 MySQL' : '💾 In-Memory'}
+
+Next steps:${nextSteps}
 Your Express CRUD API will be running on http://localhost:3000
 `);
+}
+
+// Run the async function
+createProject().catch(error => {
+    console.error('❌ Error creating project:', error);
+    process.exit(1);
+});

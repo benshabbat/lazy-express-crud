@@ -2,26 +2,38 @@
 
 [![npm version](https://img.shields.io/npm/v/lazy-express-crud.svg)](https://www.npmjs.com/package/lazy-express-crud)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Security: 9.5/10](https://img.shields.io/badge/Security-9.5%2F10-brightgreen.svg)](./SECURITY-FINAL-REPORT.md)
 
-> 🚀 CLI tool to instantly generate a complete Express.js CRUD API with authentication, ES6 modules, bcrypt and JWT
+> 🚀 Production-ready Express.js CRUD API generator with MongoDB/MySQL support, JWT authentication, and enterprise-grade security
 
-Quickly scaffold a production-ready Express.js REST API with full CRUD operations, JWT authentication, password hashing, and best practices built-in.
+Instantly scaffold a secure Express.js REST API with your choice of database (MongoDB, MySQL, or In-Memory), complete CRUD operations, JWT authentication, and security best practices built-in.
 
-## Features
+## ✨ Features
 
-✨ **Complete CRUD API** - All Create, Read, Update, Delete operations out of the box  
-🔐 **JWT Authentication** - Secure auth with bcrypt password hashing and JWT tokens  
-📁 **Organized Structure** - Clean separation of routes, controllers, and models  
-🎯 **ES6 Modules** - Modern JavaScript with import/export syntax  
-🔒 **Security Built-in** - Input validation, password hashing, and error handling  
-⚡ **Zero Config** - Start coding immediately  
-➕ **Extensible** - Easily add more resources with `add-crud`  
-🌐 **CORS Enabled** - Ready for frontend integration  
-📦 **Lightweight** - Minimal dependencies
+### Core Features
+✨ **Multi-Database Support** - Choose MongoDB, MySQL, or In-Memory storage  
+🔐 **JWT Authentication** - Secure auth with bcrypt and JWT tokens  
+🛡️ **Enterprise Security** - Helmet, rate limiting, input validation, injection prevention  
+📁 **Clean Architecture** - Organized routes, controllers, and models  
+🎯 **ES6 Modules** - Modern JavaScript with import/export  
+⚡ **Zero Config** - Interactive setup, start coding immediately  
+➕ **Smart Resource Generation** - Auto-detects database type  
+🌐 **Production Ready** - CORS, error handling, environment configs  
+📦 **Lightweight** - Minimal, carefully selected dependencies
 
-## Quick Start
+### Security Features (9.5/10 Score)
+🔒 **NoSQL/SQL Injection Prevention** - Validated queries and ObjectId checking  
+🛡️ **Security Headers** - helmet.js protecting against XSS, clickjacking, etc.  
+⏱️ **Rate Limiting** - DDoS protection (100 req/15min per IP)  
+✅ **Input Validation** - Type checking, length limits, sanitization  
+🚫 **Error Sanitization** - No sensitive data leaked in production  
+📏 **Payload Limits** - 10MB cap prevents DoS attacks  
+🔐 **Authentication** - bcrypt hashing + JWT tokens  
+🌐 **CORS Configuration** - Ready for production deployment
 
-### Create a new project
+## 🚀 Quick Start
+
+### 1. Create a New Project
 
 ```bash
 # Using npx (recommended - no installation needed)
@@ -32,7 +44,17 @@ npm install -g lazy-express-crud
 lazy-crud my-api
 ```
 
-### Start your server
+**Interactive Setup:**
+```
+📊 Choose your database:
+1. MongoDB (NoSQL)
+2. MySQL (SQL)
+3. In-Memory (No database - for demo)
+
+Enter your choice (1/2/3): 1
+```
+
+### 2. Start Your Server
 
 ```bash
 cd my-api
@@ -40,20 +62,49 @@ npm install
 npm run dev
 ```
 
-Your API is now running at `http://localhost:3000`! 🎉
+Your secure API is now running at `http://localhost:3000`! 🎉
 
-### Test with Postman
+## 📊 Database Options
 
-Generate a Postman Collection for all your API endpoints:
-
+### MongoDB (Recommended for flexibility)
 ```bash
-cd my-api
-gen-postman
+# Project creation automatically sets up:
+✅ Mongoose schemas with validation
+✅ MongoDB connection with error handling
+✅ Timestamps (createdAt, updatedAt)
+✅ Connection string in .env
+
+# Setup MongoDB:
+# 1. Install MongoDB locally or use MongoDB Atlas
+# 2. Update MONGODB_URI in .env if needed
+# 3. npm run dev (database created automatically)
 ```
 
-This creates `postman-collection.json` with all CRUD operations for every resource in your project. Import it to Postman and start testing!
+### MySQL (Recommended for relational data)
+```bash
+# Project creation automatically sets up:
+✅ mysql2 connection pool
+✅ Parameterized queries (SQL injection safe)
+✅ Table creation helpers
+✅ Connection config in .env
 
-## Authentication Setup
+# Setup MySQL:
+# 1. Install MySQL
+# 2. CREATE DATABASE my_api;
+# 3. Update DB credentials in .env
+# 4. npm run dev (tables created automatically)
+```
+
+### In-Memory (For testing/demos)
+```bash
+# Perfect for:
+✅ Quick demos
+✅ Testing
+✅ Learning
+⚠️ Data lost on restart
+```
+
+## 🔐 Authentication Setup
 
 Add secure JWT authentication to your project:
 
@@ -62,13 +113,14 @@ cd my-api
 add-auth
 ```
 
-This automatically creates:
-- ✅ User model with bcrypt password hashing
+**Automatically creates:**
+- ✅ User model with bcrypt password hashing (10 rounds)
 - ✅ Auth controller with JWT token generation
 - ✅ Auth routes (register, login, me)
 - ✅ Auth middleware for protected routes
 - ✅ Updates server.js with auth routes
 - ✅ Adds JWT_SECRET to .env
+- ✅ Input validation (email, password, username)
 
 ### Authentication Endpoints
 
@@ -86,76 +138,51 @@ curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"john","email":"john@example.com","password":"secret123"}'
 
-# Login
+# Login (returns JWT token)
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"john@example.com","password":"secret123"}'
 
-# Access protected route (use token from login response)
+# Access protected route
 curl http://localhost:3000/api/auth/me \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ### Protecting Your Routes
 
-Use the auth middleware to protect any route:
-
 ```javascript
 import { authMiddleware } from './middlewares/authMiddleware.js';
 
 // Protected route example
 router.get('/protected', authMiddleware, yourController);
+router.post('/items', authMiddleware, itemController.createItem);
 ```
 
-The middleware adds `req.userId` to access the authenticated user's ID.
-
-## Adding More Resources
+## ➕ Adding More Resources
 
 After creating your project, easily add more CRUD resources:
 
 ```bash
 cd my-api
-
-# Add resources (must start with uppercase)
-add-crud User
+add-crud User      # Automatically detects your database!
 add-crud Product
 add-crud Category
 ```
 
-This automatically creates:
-- ✅ Model: `src/models/User.js`
-- ✅ Controller: `src/controllers/userController.js`
-- ✅ Routes: `src/routes/userRoutes.js`
+**Smart Detection:**
+- Detects MongoDB → Creates Mongoose schema
+- Detects MySQL → Creates SQL class with queries
+- Detects In-Memory → Creates in-memory array
 
-Then simply add the route to your `server.js`:
+**Automatically creates:**
+- ✅ Model with database-specific code
+- ✅ Controller with validation & security
+- ✅ Routes with all CRUD operations
+- ✅ Updates server.js automatically
 
-```javascript
-import userRoutes from './routes/userRoutes.js';
-app.use('/api/users', userRoutes);
-```
+### Generated Endpoints
 
-## Project Structure
-
-```
-my-api/
-├── src/
-│   ├── controllers/      # Business logic
-│   │   └── itemController.js
-│   ├── models/          # Data models
-│   │   └── Item.js
-│   ├── routes/          # API routes
-│   │   └── itemRoutes.js
-│   ├── middlewares/     # Custom middleware
-│   └── server.js        # App entry point
-├── .env                 # Environment variables
-├── .gitignore
-├── package.json
-└── README.md
-```
-
-## Default API Endpoints
-
-The generated project includes a complete Item resource:
+Each resource gets full CRUD:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -165,67 +192,161 @@ The generated project includes a complete Item resource:
 | PUT | `/api/items/:id` | Update item |
 | DELETE | `/api/items/:id` | Delete item |
 
-### Example Request
+## 🧪 Testing with Postman
+
+Generate a complete Postman Collection:
 
 ```bash
-# Get all items
-curl http://localhost:3000/api/items
-
-# Create new item
-curl -X POST http://localhost:3000/api/items \
-  -H "Content-Type: application/json" \
-  -d '{"name":"My Item","description":"Item description","price":99}'
+cd my-api
+gen-postman
 ```
 
-## Configuration
+Creates `postman-collection.json` with:
+- ✅ All CRUD operations for every resource
+- ✅ Pre-configured requests
+- ✅ Example payloads
+- ✅ Import to Postman and start testing!
 
-The generated project uses environment variables. Edit `.env`:
+## 📁 Project Structure
+
+```
+my-api/
+├── src/
+│   ├── controllers/      # Business logic with validation
+│   │   └── itemController.js
+│   ├── models/          # Database models (Mongoose/MySQL/In-Memory)
+│   │   └── Item.js
+│   ├── routes/          # API routes
+│   │   └── itemRoutes.js
+│   ├── middlewares/     # Auth & custom middleware
+│   │   └── authMiddleware.js
+│   └── server.js        # App entry point with security
+├── .env                 # Environment variables
+├── .gitignore          # Git ignore file
+├── package.json        # Dependencies
+└── README.md           # Project documentation
+```
+## 🔒 Security Features (9.5/10 Security Score)
+
+### Built-in Security
+- ✅ **NoSQL Injection Prevention** - MongoDB ObjectId validation
+- ✅ **SQL Injection Prevention** - Parameterized MySQL queries
+- ✅ **Input Validation** - Type checking, length limits (name: 255, description: 2000)
+- ✅ **Security Headers** - helmet.js (XSS, clickjacking, MIME sniffing protection)
+- ✅ **Rate Limiting** - 100 requests per 15 minutes per IP
+- ✅ **Payload Size Limits** - 10MB max to prevent DoS
+- ✅ **Error Sanitization** - Generic messages in production
+- ✅ **CORS Configuration** - Production-ready with origin control
+- ✅ **JWT Authentication** - Secure token generation with bcrypt hashing
+- ✅ **Password Security** - bcrypt with 10 salt rounds
+- ✅ **Path Traversal Prevention** - Project name validation
+- ✅ **Reserved Name Protection** - Prevents system conflicts
+
+### Production Security Checklist
+
+Before deploying:
+- [ ] Set `NODE_ENV=production` in environment
+- [ ] Configure CORS with specific origins
+- [ ] Use strong database passwords
+- [ ] Enable HTTPS/TLS
+- [ ] Set up proper logging (Winston/Pino)
+- [ ] Configure firewall rules
+- [ ] Use secrets management (not .env files)
+- [ ] Enable database authentication
+- [ ] Keep dependencies updated
+- [ ] Use a process manager (PM2)
+
+See [SECURITY-FINAL-REPORT.md](./SECURITY-FINAL-REPORT.md) for detailed security audit.
+
+## 📊 Example API Response
+
+```json
+{
+  "success": true,
+  "count": 2,
+  "data": [
+    {
+      "_id": "507f1f77bcf86cd799439011",
+      "name": "Sample Item",
+      "description": "This is a sample item",
+      "price": 99,
+      "createdAt": "2026-01-06T12:00:00.000Z",
+      "updatedAt": "2026-01-06T12:00:00.000Z"
+    }
+  ]
+}
+```
+
+## ⚙️ Configuration
+
+Edit `.env` in your project:
 
 ```env
+# Server
 PORT=3000
 NODE_ENV=development
-JWT_SECRET=your-secret-key-here  # Generated automatically by add-auth
-JWT_EXPIRES_IN=24h               # Token expiration time
+
+# MongoDB (if using MongoDB)
+MONGODB_URI=mongodb://localhost:27017/my-api
+# Production: MONGODB_URI=mongodb://user:pass@host:port/db?authSource=admin
+
+# MySQL (if using MySQL)
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=my-api
+
+# JWT (if using auth)
+JWT_SECRET=your-secret-key-here
+JWT_EXPIRES_IN=24h
 ```
 
-⚠️ **Important:** Always change the JWT_SECRET to a secure random value in production!
+⚠️ **Security Warning:** Never commit `.env` files! Always use strong passwords in production.
 
-## Scripts
+## 📜 Scripts
 
 - `npm start` - Start production server
 - `npm run dev` - Start development server with auto-reload (nodemon)
 
-## Security Features
+## 🛠️ Requirements
 
-✅ JWT authentication with secure token generation  
-✅ Password hashing with bcrypt (10 rounds)  
-✅ Token verification and expiration  
-✅ Project name validation (prevents path traversal and injection)  
-✅ Length limits to prevent DoS attacks  
-✅ Reserved name checking (node_modules, .git, etc.)  
-✅ Resource name validation (prevents reserved JavaScript keywords)  
-✅ Hidden file prevention (no dot prefix)  
-✅ Character whitelist validation  
-✅ Error handling middleware  
-✅ Input validation in all controllers  
-✅ Automatic server.js updates with safety checks  
-✅ Protected routes with auth middleware
+- **Node.js** >= 14.0.0
+- **npm** or yarn
+- **MongoDB** (if using MongoDB option)
+- **MySQL** (if using MySQL option)
 
-## Database Integration
+## 📚 Commands Reference
 
-The generated project uses **in-memory storage** for quick prototyping. For production, replace the model implementation with your database of choice:
+| Command | Description |
+|---------|-------------|
+| `lazy-crud <project-name>` | Create new Express CRUD project |
+| `add-crud <ResourceName>` | Add new CRUD resource (must be inside project) |
+| `add-auth` | Add JWT authentication (must be inside project) |
+| `gen-postman` | Generate Postman Collection (must be inside project) |
 
-- 🍃 **MongoDB** with Mongoose
-- 🐘 **PostgreSQL** with Sequelize or Prisma
-- 🐬 **MySQL** with Sequelize
-- 🔥 **Firebase** Firestore
+## 🤝 Contributing
 
-## Requirements
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-- Node.js >= 14.0.0
-- npm or yarn
+## 📝 License
 
-## Commands Reference
+MIT © [DavidChen Benshabbat](https://github.com/benshabbat)
+
+## 🔗 Links
+
+- [npm Package](https://www.npmjs.com/package/lazy-express-crud)
+- [GitHub Repository](https://github.com/benshabbat/lazy-express-crud)
+- [Report Issues](https://github.com/benshabbat/lazy-express-crud/issues)
+- [Changelog](./CHANGELOG.md)
+- [Security Audit](./SECURITY-FINAL-REPORT.md)
+
+## 🌟 Show Your Support
+
+Give a ⭐️ if this project helped you!
+
+---
+
+**Made with ❤️ by [benshabbat](https://github.com/benshabbat)**
 
 ### lazy-crud [project-name]
 
