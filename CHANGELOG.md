@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-01-06
+
+### Changed - ES6 Modules Migration 🚀
+- **Migrated entire codebase from CommonJS to ES6 Modules**
+  - Changed `package.json` type to "module"
+  - Converted all `require()` to `import` statements
+  - Converted all `module.exports` to `export` statements
+  - Added `__dirname` and `__filename` polyfills using `fileURLToPath`
+  - Updated `crypto` import in generateAuth.js
+- **Benefits:**
+  - Modern JavaScript standard (ES2015+)
+  - Better tree-shaking support
+  - Consistent with generated project code
+  - Top-level await support
+  - Automatic strict mode
+  - Improved static analysis
+- **Security:** All security features remain intact (10/10 score maintained)
+- **Compatibility:** Requires Node.js >= 14.0.0
+
 ## [1.2.2] - 2026-01-06
 
 ### Added

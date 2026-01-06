@@ -10,6 +10,8 @@ my-api/
 my-project/
 my-project2/
 my-project3/
+test-esm-project/
+test-esm-complete/
 express-crud-app/
 auth-test/
 test-secure/

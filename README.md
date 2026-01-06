@@ -38,6 +38,12 @@ Instantly scaffold a secure Express.js REST API with your choice of database (Mo
 
 ## 🚀 Quick Start
 
+### Requirements
+
+- **Node.js >= 14.0.0** (ES6 Modules support required)
+- **npm** or **yarn**
+- **MongoDB** or **MySQL** (optional - can use in-memory storage)
+
 ### 1. Create a New Project
 
 ```bash
@@ -336,10 +342,23 @@ JWT_EXPIRES_IN=24h
 
 ## 🛠️ Requirements
 
-- **Node.js** >= 14.0.0
+- **Node.js** >= 14.0.0 (ES6 Modules support)
 - **npm** or yarn
 - **MongoDB** (if using MongoDB option)
 - **MySQL** (if using MySQL option)
+
+### Technology Stack
+
+- **ES6 Modules** - Modern JavaScript with `import`/`export` syntax
+- **Express.js** - Fast, unopinionated web framework
+- **Mongoose** - MongoDB ODM (if MongoDB selected)
+- **mysql2** - MySQL client with Promise support (if MySQL selected)
+- **bcryptjs** - Password hashing (10 rounds)
+- **jsonwebtoken** - JWT authentication
+- **helmet** - Security headers middleware
+- **express-rate-limit** - Rate limiting middleware
+- **cors** - CORS middleware with whitelist support
+- **dotenv** - Environment variable management
 
 ## 📚 Commands Reference
 

@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Security: Sanitize string to prevent injection attacks
 function sanitizeString(input) {
@@ -553,7 +559,7 @@ function updateEnvFile() {
   }
 
   // Security: Generate a strong random secret (64 bytes = 128 hex chars)
-  const randomSecret = require("crypto").randomBytes(64).toString("hex");
+  const randomSecret = crypto.randomBytes(64).toString("hex");
 
   const authEnvContent = `
 # JWT Authentication
