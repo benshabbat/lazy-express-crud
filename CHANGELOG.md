@@ -7,10 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-01-06
+
 ### Added
 - **Multiple resources creation** - `add-crud` now supports creating multiple resources in one command
   - Example: `add-crud User Product Book` creates all three resources at once
-  - Shows summary of successful/failed creations
+  - Shows progress indicator ([1/3], [2/3], etc.)
+  - Displays summary of successful/failed creations
+  - Validates all resource names before processing
 
 ## [1.2.1] - 2026-01-06
 
