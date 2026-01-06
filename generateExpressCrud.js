@@ -150,13 +150,20 @@ const getServerTemplate = (dbChoice) => {
     const mongoConnection = dbChoice === 'mongodb' ? `
 import mongoose from 'mongoose';
 
-// MongoDB Connection
+// MongoDB Connection with security options
 const connectDB = async () => {
     try {
-        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/${projectName}');
+        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/${projectName}', {
+            // Security: Use TLS/SSL in production
+            ssl: process.env.NODE_ENV === 'production',
+            // Timeout settings
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
         console.log('✅ MongoDB connected successfully');
     } catch (error) {
         console.error('❌ MongoDB connection error:', error);
+        console.error('Please check your MONGODB_URI in .env file');
         process.exit(1);
     }
 };
@@ -199,9 +206,29 @@ import itemRoutes from './routes/itemRoutes.js';
 ${dbChoice === 'mongodb' ? "import mongoose from 'mongoose';\n" : ''}${dbChoice === 'mysql' ? "import mysql from 'mysql2/promise';\n" : ''}
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Environment validation
+const requiredEnvVars = ${dbChoice === 'mongodb' ? "['MONGODB_URI']" : dbChoice === 'mysql' ? "['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME']" : '[]'};
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+if (missingEnvVars.length > 0) {
+    console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
+    console.error('Please check your .env file');
+    process.exit(1);
+}
 ${mongoConnection}${mysqlConnection}
 // Security Middleware
 app.use(helmet()); // Security headers
+
+// HTTPS enforcement in production
+if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+        if (req.header('x-forwarded-proto') !== 'https') {
+            res.redirect(\`https://\${req.header('host')}\${req.url}\`);
+        } else {
+            next();
+        }
+    });
+}
 
 // Rate limiting
 const limiter = rateLimit({
@@ -213,10 +240,31 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS configuration
-// Production: configure with specific origins
-// app.use(cors({ origin: 'https://yourdomain.com' }));
-app.use(cors()); // Development: allows all origins
+// CORS configuration with whitelist
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',') 
+    : ['http://localhost:3000', 'http://localhost:5173'];
+
+const corsOptions = {
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (process.env.NODE_ENV === 'production') {
+            if (allowedOrigins.indexOf(origin) !== -1) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'));
+            }
+        } else {
+            // Development: allow all origins
+            callback(null, true);
+        }
+    },
+    credentials: true,
+    optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 
 // Body parser middleware
 app.use(express.json({ limit: '10mb' })); // Limit payload size
@@ -660,16 +708,23 @@ export default Item;
 const getEnvTemplate = (dbChoice) => {
     let template = `PORT=3000
 NODE_ENV=development
+
+# CORS Configuration
+# Comma-separated list of allowed origins for production
+# ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com,https://app.yourdomain.com
 `;
     
     if (dbChoice === 'mongodb') {
         template += `
 # MongoDB Connection
-# Development:
+# Development (no authentication):
 MONGODB_URI=mongodb://localhost:27017/${projectName}
 
-# Production (with authentication):
-# MONGODB_URI=mongodb://username:password@host:port/${projectName}?authSource=admin
+# Production (with authentication and SSL - REQUIRED!):
+# MONGODB_URI=mongodb://username:password@host:port/${projectName}?authSource=admin&ssl=true
+#
+# MongoDB Atlas (cloud with TLS):
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/${projectName}?retryWrites=true&w=majority&ssl=true
 `;
     } else if (dbChoice === 'mysql') {
         template += `
@@ -679,10 +734,21 @@ DB_USER=root
 DB_PASSWORD=
 DB_NAME=${projectName}
 
-# Production: Use environment variables and strong passwords!
-# Never commit .env files to git!
+# Production MySQL (with strong password - REQUIRED!):
+# DB_HOST=your-production-host
+# DB_USER=your-db-user
+# DB_PASSWORD=your-secure-password
+# DB_NAME=${projectName}
 `;
     }
+    
+    template += `
+# Security Notes:
+# 1. Never commit .env files to git!
+# 2. Use strong passwords in production
+# 3. Enable SSL/TLS for database connections in production
+# 4. Set ALLOWED_ORIGINS to your production domains
+`;
     
     return template;
 };
