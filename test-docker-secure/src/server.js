@@ -4,24 +4,18 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import itemRoutes from './routes/itemRoutes.js';
-import authRoutes from './routes/authRoutes.js';
-import connectDB from './config/database.js';
-import userRoutes from './routes/userRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Environment validation
-const requiredEnvVars = ['MONGODB_URI'];
+const requiredEnvVars = [];
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 if (missingEnvVars.length > 0) {
     console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
     console.error('Please check your .env file');
     process.exit(1);
 }
-
-// Connect to MongoDB
-connectDB();
 
 // Security Middleware
 app.use(helmet()); // Security headers
@@ -81,7 +75,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.get('/', (req, res) => {
     res.json({ 
         message: 'Welcome to Express CRUD API',
-        database: 'MongoDB',
+        database: 'In-Memory',
         endpoints: {
             'GET /api/items': 'Get all items',
             'GET /api/items/:id': 'Get item by id',
@@ -93,8 +87,6 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/items', itemRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
 
 
 // Health check endpoint for Docker

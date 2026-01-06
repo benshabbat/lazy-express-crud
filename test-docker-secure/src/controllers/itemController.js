@@ -1,39 +1,31 @@
-import User from '../models/User.js';
-import mongoose from 'mongoose';
+import Item from '../models/Item.js';
 
-// GET all users
-export const getAllUsers = async (req, res) => {
+// GET all items
+export const getAllItems = async (req, res) => {
     try {
-        const items = await User.find();
+        const items = Item.getAll();
         res.json({
             success: true,
             count: items.length,
             data: items
         });
     } catch (error) {
-        console.error('Error fetching users:', error);
+        console.error('Error fetching items:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch users'
+            error: 'Failed to fetch items'
         });
     }
 };
 
-// GET user by id
-export const getUserById = async (req, res) => {
+// GET item by id
+export const getItemById = async (req, res) => {
     try {
-        // Security: Validate MongoDB ObjectId
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid ID format'
-            });
-        }
-        const item = await User.findById(req.params.id);
+        const item = Item.getById(req.params.id);
         if (!item) {
             return res.status(404).json({
                 success: false,
-                error: 'User not found'
+                error: 'Item not found'
             });
         }
         res.json({
@@ -41,18 +33,18 @@ export const getUserById = async (req, res) => {
             data: item
         });
     } catch (error) {
-        console.error('Error fetching user:', error);
+        console.error('Error fetching item:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch user'
+            error: 'Failed to fetch item'
         });
     }
 };
 
-// POST create user
-export const createUser = async (req, res) => {
+// POST create item
+export const createItem = async (req, res) => {
     try {
-        const { name, description } = req.body;
+        const { name, description, price } = req.body;
         
         // Input validation
         if (!name || typeof name !== 'string') {
@@ -83,31 +75,24 @@ export const createUser = async (req, res) => {
             });
         }
 
-        const newItem = await User.create({ name, description });
+        const newItem = Item.create({ name, description, price });
         res.status(201).json({
             success: true,
             data: newItem
         });
     } catch (error) {
-        console.error('Error creating user:', error);
+        console.error('Error creating item:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to create user'
+            error: 'Failed to create item'
         });
     }
 };
 
-// PUT update user
-export const updateUser = async (req, res) => {
+// PUT update item
+export const updateItem = async (req, res) => {
     try {
-        // Security: Validate MongoDB ObjectId
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid ID format'
-            });
-        }
-        const { name, description } = req.body;
+        const { name, description, price } = req.body;
         
         // Input validation
         if (name !== undefined) {
@@ -128,16 +113,12 @@ export const updateUser = async (req, res) => {
             }
         }
 
-        const updatedItem = await User.findByIdAndUpdate(
-            req.params.id, 
-            { name, description },
-            { new: true, runValidators: true }
-        );
+        const updatedItem = Item.update(req.params.id, { name, description, price });
         
         if (!updatedItem) {
             return res.status(404).json({
                 success: false,
-                error: 'User not found'
+                error: 'Item not found'
             });
         }
 
@@ -146,42 +127,35 @@ export const updateUser = async (req, res) => {
             data: updatedItem
         });
     } catch (error) {
-        console.error('Error updating user:', error);
+        console.error('Error updating item:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to update user'
+            error: 'Failed to update item'
         });
     }
 };
 
-// DELETE user
-export const deleteUser = async (req, res) => {
+// DELETE item
+export const deleteItem = async (req, res) => {
     try {
-        // Security: Validate MongoDB ObjectId
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid ID format'
-            });
-        }
-        const deleted = await User.findByIdAndDelete(req.params.id);
+        const deleted = Item.delete(req.params.id);
         
         if (!deleted) {
             return res.status(404).json({
                 success: false,
-                error: 'User not found'
+                error: 'Item not found'
             });
         }
 
         res.json({
             success: true,
-            message: 'User deleted successfully'
+            message: 'Item deleted successfully'
         });
     } catch (error) {
-        console.error('Error deleting user:', error);
+        console.error('Error deleting item:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to delete user'
+            error: 'Failed to delete item'
         });
     }
 };

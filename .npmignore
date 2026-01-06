@@ -12,6 +12,9 @@ my-project2/
 my-project3/
 test-esm-project/
 test-esm-complete/
+test-mysql-docker/
+test-mysql/
+test-docker-secure/
 express-crud-app/
 auth-test/
 test-secure/

@@ -8,16 +8,6 @@
 - **User**: Non-root user for security
 - **Health Check**: Automatic health monitoring
 
-### MongoDB
-- **Database**: Running on port 27017
-- **Data**: Persisted in Docker volume `mongodb-data`
-- **Connection**: `mongodb://mongodb:27017/test-esm-complete`
-
-### Mongo Express (Database UI)
-- **URL**: http://localhost:8081
-- **Username**: admin
-- **Password**: admin123
-- View and manage your MongoDB data through a web interface
 
 
 ## 🚀 Quick Start
@@ -30,8 +20,7 @@ docker-compose up -d
 
 This will start:
 - Your Node.js application
-- MongoDB database
-- Mongo Express UI
+
 
 ### 2. View Logs
 
@@ -41,13 +30,12 @@ docker-compose logs -f
 
 # Specific service
 docker-compose logs -f app
-docker-compose logs -f mongodb
+
 ```
 
 ### 3. Access Your Application
 
 📱 **API**: http://localhost:3000
-🌐 **Mongo Express UI**: http://localhost:8081 (admin/admin123)
 
 ## 🛠️ Common Commands
 
@@ -80,17 +68,6 @@ docker-compose exec app sh
 docker-compose exec app npm install <package>
 ```
 
-### MongoDB Commands
-```bash
-# Access MongoDB shell
-docker-compose exec mongodb mongosh
-
-# Backup database
-docker-compose exec mongodb mongodump --out=/data/backup
-
-# Restore database
-docker-compose exec mongodb mongorestore /data/backup
-```
 
 
 ## 📋 Environment Variables
@@ -100,7 +77,7 @@ Edit your `.env` file:
 ```env
 NODE_ENV=development
 PORT=3000
-MONGODB_URI=mongodb://mongodb:27017/test-esm-complete
+
 ```
 
 ## 🔒 Production Deployment
@@ -108,13 +85,13 @@ MONGODB_URI=mongodb://mongodb:27017/test-esm-complete
 ### Build for Production
 ```bash
 # Build image
-docker build -t test-esm-complete:latest .
+docker build -t test-docker-secure:latest .
 
 # Tag for registry
-docker tag test-esm-complete:latest your-registry/test-esm-complete:latest
+docker tag test-docker-secure:latest your-registry/test-docker-secure:latest
 
 # Push to registry
-docker push your-registry/test-esm-complete:latest
+docker push your-registry/test-docker-secure:latest
 ```
 
 ### Production Best Practices
@@ -144,7 +121,7 @@ docker-compose up -d --build --force-recreate
 docker-compose ps
 
 # Check database logs
-docker-compose logs mongodb
+
 
 # Restart services
 docker-compose restart
@@ -164,4 +141,4 @@ docker-compose up -d
 
 - [Docker Documentation](https://docs.docker.com/)
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [MongoDB Docker Hub](https://hub.docker.com/_/mongo)
+

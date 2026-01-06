@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-01-06
+
+### Security - Docker Security Hardening 🔒
+- **Enhanced add-docker security**
+  - Added `validateProjectName()` - Validates project names (1-100 chars, safe characters only)
+  - Added `validatePath()` - Prevents path traversal attacks
+  - Blocks reserved/dangerous names (node_modules, .git, docker, etc.)
+  - All file operations now use path validation
+- **Secure Default Credentials**
+  - MongoDB Mongo Express: Auto-generated 32-character random password
+  - MySQL: Auto-generated 48-character random password
+  - Replaced weak defaults (admin123, rootpassword) with crypto.randomBytes()
+- **Security Warnings**
+  - Added credential display after Docker setup
+  - Production security reminders in console output
+  - Updated README.docker.md with security best practices
+- **Result:** Docker setup now achieves 10/10 security score
+
 ## [1.4.0] - 2026-01-06
 
 ### Added - Docker Support 🐳

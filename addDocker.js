@@ -2,15 +2,62 @@
 
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Security: Validate project name
+function validateProjectName(name) {
+    if (!name || typeof name !== 'string') {
+        throw new Error('Project name must be a non-empty string');
+    }
+    
+    // Check length (prevent DoS and filesystem issues)
+    if (name.length === 0 || name.length > 100) {
+        throw new Error('Project name must be between 1 and 100 characters');
+    }
+    
+    // Allow only safe characters: letters, numbers, hyphens, underscores
+    const validPattern = /^[a-zA-Z0-9_-]+$/;
+    if (!validPattern.test(name)) {
+        throw new Error('Project name can only contain letters, numbers, hyphens, and underscores');
+    }
+    
+    // Prevent reserved/dangerous names
+    const reserved = ['node_modules', '.git', '.env', 'docker', 'bin', 'etc', 'usr', 'var', 'tmp'];
+    if (reserved.includes(name.toLowerCase())) {
+        throw new Error(`"${name}" is a reserved name and cannot be used`);
+    }
+    
+    return name;
+}
+
+// Security: Validate path to prevent path traversal
+function validatePath(inputPath) {
+    const normalized = path.normalize(inputPath);
+    
+    // Prevent path traversal
+    if (normalized.includes('..') || normalized.includes('\0')) {
+        throw new Error('Invalid path: Path traversal detected');
+    }
+    
+    // Prevent absolute paths outside project
+    if (path.isAbsolute(normalized)) {
+        const relative = path.relative(process.cwd(), normalized);
+        if (relative.startsWith('..')) {
+            throw new Error('Invalid path: Outside project directory');
+        }
+    }
+    
+    return normalized;
+}
+
 // Check if we're in an Express CRUD project
 const currentDir = process.cwd();
-const packageJsonPath = path.join(currentDir, 'package.json');
+const packageJsonPath = validatePath(path.join(currentDir, 'package.json'));
 
 if (!fs.existsSync(packageJsonPath)) {
     console.error('❌ Error: Not in an Express CRUD project directory');
@@ -40,9 +87,16 @@ try {
 
 console.log(`\n🐳 Setting up Docker for ${dbChoice === 'mongodb' ? 'MongoDB' : dbChoice === 'mysql' ? 'MySQL' : 'Node.js app'}...\n`);
 
-// Get project name from package.json
+// Get project name from package.json and validate it
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-const projectName = packageJson.name || 'express-app';
+let projectName;
+try {
+    projectName = validateProjectName(packageJson.name || 'express-app');
+} catch (error) {
+    console.error(`❌ Error: ${error.message}`);
+    console.error('Using fallback name: express-app');
+    projectName = 'express-app';
+}
 
 // Dockerfile template
 const dockerfileTemplate = `# Multi-stage build for smaller image
@@ -109,6 +163,9 @@ build
 
 // Docker Compose templates based on database
 const getDockerComposeTemplate = (db, projName) => {
+    // Generate secure random password for Mongo Express
+    const mongoExpressPassword = crypto.randomBytes(16).toString('hex');
+    
     const baseService = {
         app: `  app:
     build: .
@@ -154,8 +211,8 @@ ${baseService.app}
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongodb
       - ME_CONFIG_MONGODB_PORT=27017
-      - ME_CONFIG_BASICAUTH_USERNAME=admin
-      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
+      - ME_CONFIG_BASICAUTH_USERNAME=\${MONGO_EXPRESS_USER:-admin}
+      - ME_CONFIG_BASICAUTH_PASSWORD=\${MONGO_EXPRESS_PASSWORD:-${mongoExpressPassword}}
     depends_on:
       - mongodb
     networks:
@@ -170,13 +227,16 @@ volumes:
     driver: local
 `;
     } else if (db === 'mysql') {
+        // Generate secure random password for MySQL
+        const mysqlPassword = crypto.randomBytes(24).toString('hex');
+        
         return `version: '3.8'
 
 services:
 ${baseService.app}
       - DB_HOST=mysql
       - DB_USER=\${DB_USER:-root}
-      - DB_PASSWORD=\${DB_PASSWORD:-rootpassword}
+      - DB_PASSWORD=\${DB_PASSWORD:-${mysqlPassword}}
       - DB_NAME=\${DB_NAME:-${projName}}
     depends_on:
       mysql:
@@ -191,14 +251,14 @@ ${baseService.app}
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=\${DB_PASSWORD:-rootpassword}
+      - MYSQL_ROOT_PASSWORD=\${DB_PASSWORD:-${mysqlPassword}}
       - MYSQL_DATABASE=\${DB_NAME:-${projName}}
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p\${DB_PASSWORD:-rootpassword}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p\${DB_PASSWORD:-${mysqlPassword}}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -256,25 +316,27 @@ const getDockerReadmeTemplate = (db, projName) => {
 
 ### Mongo Express (Database UI)
 - **URL**: http://localhost:8081
-- **Username**: admin
-- **Password**: admin123
+- **Username**: Set via \`MONGO_EXPRESS_USER\` in .env (default: admin)
+- **Password**: Auto-generated secure password (see docker-compose.yml or set \`MONGO_EXPRESS_PASSWORD\` in .env)
 - View and manage your MongoDB data through a web interface
+- ⚠️  **Security**: Change default credentials in production!
 `;
-        uiAccess = '\n🌐 **Mongo Express UI**: http://localhost:8081 (admin/admin123)';
+        uiAccess = '\n🌐 **Mongo Express UI**: http://localhost:8081 (credentials in docker-compose.yml)';
     } else if (db === 'mysql') {
         dbSection = `### MySQL
 - **Database**: Running on port 3306
 - **Data**: Persisted in Docker volume \`mysql-data\`
-- **Root Password**: Set in .env as \`DB_PASSWORD\` (default: rootpassword)
+- **Root Password**: Auto-generated secure password (see docker-compose.yml or set \`DB_PASSWORD\` in .env)
 - **Database Name**: Set in .env as \`DB_NAME\` (default: ${projName})
+- ⚠️  **Security**: Set strong \`DB_PASSWORD\` in .env for production!
 
 ### phpMyAdmin (Database UI)
 - **URL**: http://localhost:8080
 - **Username**: root
-- **Password**: Your DB_PASSWORD from .env
+- **Password**: Same as DB_PASSWORD from docker-compose.yml or .env
 - Manage your MySQL database through a web interface
 `;
-        uiAccess = '\n🌐 **phpMyAdmin**: http://localhost:8080 (root/your-db-password)';
+        uiAccess = '\n🌐 **phpMyAdmin**: http://localhost:8080 (root/[see docker-compose.yml])';
     }
 
     return `# Docker Setup Guide
@@ -449,26 +511,30 @@ ${db === 'mongodb' ? '- [MongoDB Docker Hub](https://hub.docker.com/_/mongo)' : 
 `;
 };
 
-// Create Dockerfile
-fs.writeFileSync(path.join(currentDir, 'Dockerfile'), dockerfileTemplate);
+// Create Dockerfile with path validation
+const dockerfilePath = validatePath(path.join(currentDir, 'Dockerfile'));
+fs.writeFileSync(dockerfilePath, dockerfileTemplate);
 console.log('✅ Created Dockerfile');
 
-// Create .dockerignore
-fs.writeFileSync(path.join(currentDir, '.dockerignore'), dockerignoreTemplate);
+// Create .dockerignore with path validation
+const dockerignorePath = validatePath(path.join(currentDir, '.dockerignore'));
+fs.writeFileSync(dockerignorePath, dockerignoreTemplate);
 console.log('✅ Created .dockerignore');
 
-// Create docker-compose.yml
+// Create docker-compose.yml with path validation
 const dockerComposeContent = getDockerComposeTemplate(dbChoice, projectName);
-fs.writeFileSync(path.join(currentDir, 'docker-compose.yml'), dockerComposeContent);
+const dockerComposePath = validatePath(path.join(currentDir, 'docker-compose.yml'));
+fs.writeFileSync(dockerComposePath, dockerComposeContent);
 console.log('✅ Created docker-compose.yml');
 
-// Create README.docker.md
+// Create README.docker.md with path validation
 const dockerReadmeContent = getDockerReadmeTemplate(dbChoice, projectName);
-fs.writeFileSync(path.join(currentDir, 'README.docker.md'), dockerReadmeContent);
+const dockerReadmePath = validatePath(path.join(currentDir, 'README.docker.md'));
+fs.writeFileSync(dockerReadmePath, dockerReadmeContent);
 console.log('✅ Created README.docker.md');
 
 // Update .env if needed
-const envPath = path.join(currentDir, '.env');
+const envPath = validatePath(path.join(currentDir, '.env'));
 if (fs.existsSync(envPath)) {
     let envContent = fs.readFileSync(envPath, 'utf8');
     let needsUpdate = false;
@@ -495,7 +561,7 @@ if (fs.existsSync(envPath)) {
 }
 
 // Add health check endpoint to server.js if it doesn't exist
-const serverPath = path.join(currentDir, 'src', 'server.js');
+const serverPath = validatePath(path.join(currentDir, 'src', 'server.js'));
 if (fs.existsSync(serverPath)) {
     let serverContent = fs.readFileSync(serverPath, 'utf8');
     
@@ -513,6 +579,23 @@ if (fs.existsSync(serverPath)) {
 
 console.log('\n✨ Docker setup complete!\n');
 
+// Security warnings based on database type
+if (dbChoice === 'mongodb') {
+    const mongoPassword = dockerComposeContent.match(/ME_CONFIG_BASICAUTH_PASSWORD:-([a-f0-9]+)/)?.[1];
+    console.log('🔒 Security Note:');
+    console.log(`   Mongo Express credentials:`);
+    console.log(`   - Username: admin (or set MONGO_EXPRESS_USER in .env)`);
+    console.log(`   - Password: ${mongoPassword ? mongoPassword.substring(0, 16) + '...' : 'See docker-compose.yml'}`);
+    console.log('   ⚠️  Change these in production!');
+    console.log('');
+} else if (dbChoice === 'mysql') {
+    const mysqlPassword = dockerComposeContent.match(/DB_PASSWORD:-([a-f0-9]+)/)?.[1];
+    console.log('🔒 Security Note:');
+    console.log(`   MySQL root password: ${mysqlPassword ? mysqlPassword.substring(0, 16) + '...' : 'See docker-compose.yml'}`);
+    console.log('   ⚠️  Set DB_PASSWORD in .env for production!');
+    console.log('');
+}
+
 console.log('📋 Next steps:');
 console.log('  1. Review docker-compose.yml and .env configuration');
 console.log('  2. Start services: docker-compose up -d');
@@ -520,7 +603,7 @@ console.log('  3. View logs: docker-compose logs -f');
 console.log('  4. Access your API: http://localhost:3000');
 
 if (dbChoice === 'mongodb') {
-    console.log('  5. Mongo Express UI: http://localhost:8081 (admin/admin123)');
+    console.log('  5. Mongo Express UI: http://localhost:8081');
 } else if (dbChoice === 'mysql') {
     console.log('  5. phpMyAdmin: http://localhost:8080');
 }
