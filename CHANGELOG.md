@@ -7,13 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-01-06
+
 ### Changed
 - **Database configuration** moved to separate `src/config/database.js` file for better organization
 - Models now import database connection from `config/database.js` instead of `server.js`
+- Improved project structure with dedicated config folder
 
 ### Fixed
 - **add-auth** now skips User.js creation if it already exists (allows adding User resource before auth)
-- **add-auth** no longer imports authMiddleware to server.js (it should only be imported in route files that need it)
+- **add-auth** no longer imports authMiddleware to server.js (should only be imported in route files)
+- MySQL models now correctly import database from config folder
 
 ## [1.2.0] - 2026-01-06
 

@@ -1,6 +1,6 @@
 {
   "name": "lazy-express-crud",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Production-ready Express.js CRUD API generator with MongoDB/MySQL support, JWT authentication, and enterprise-grade security (10/10 security score). Features HTTPS enforcement, CORS whitelist, SSL/TLS support, and comprehensive input validation.",
   "main": "generateExpressCrud.js",
   "type": "commonjs",
@@ -65,6 +65,7 @@
     "README.md",
     "CHANGELOG.md",
     "SECURITY-AUDIT.md",
+    "SECURITY-FINAL-REPORT.md",
     "TESTING-GUIDE.md",
     "LICENSE"
   ]

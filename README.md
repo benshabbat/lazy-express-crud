@@ -217,7 +217,9 @@ Creates `postman-collection.json` with:
 ```
 my-api/
 ├── src/
-│   ├── controllers/      # Business logic with validation
+│   ├── config/          # Database configuration
+│   │   └── database.js  # MongoDB/MySQL connection
+│   ├── controllers/     # Business logic with validation
 │   │   └── itemController.js
 │   ├── models/          # Database models (Mongoose/MySQL/In-Memory)
 │   │   └── Item.js
