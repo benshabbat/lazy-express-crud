@@ -4,9 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import itemRoutes from './routes/itemRoutes.js';
-import authRoutes from './routes/authRoutes.js';
 import connectDB from './config/database.js';
-import userRoutes from './routes/userRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -93,14 +91,6 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/items', itemRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-
-
-// Health check endpoint for Docker
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

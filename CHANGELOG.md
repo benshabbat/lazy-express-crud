@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-01-06
+
+### Added - Docker Support 🐳
+- **New command: `add-docker`** - Adds complete Docker setup to existing projects
+  - Automatically detects database type (MongoDB/MySQL/In-Memory)
+  - Creates optimized `Dockerfile` with multi-stage build
+  - Generates `docker-compose.yml` with database and UI services
+  - Creates `.dockerignore` for optimized builds
+  - Generates comprehensive `README.docker.md` documentation
+  - Adds `/health` endpoint for container health checks
+- **MongoDB Projects:**
+  - MongoDB 7 container
+  - Mongo Express UI (accessible at :8081)
+  - Persistent data volumes
+- **MySQL Projects:**
+  - MySQL 8.0 container with health checks
+  - phpMyAdmin UI (accessible at :8080)
+  - Persistent data volumes
+- **Security Features:**
+  - Non-root user in containers
+  - Multi-stage builds for smaller images
+  - Health checks for reliability
+  - Network isolation
+
 ## [1.3.0] - 2026-01-06
 
 ### Changed - ES6 Modules Migration 🚀

@@ -15,7 +15,8 @@ Instantly scaffold a secure Express.js REST API with your choice of database (Mo
 ✨ **Multi-Database Support** - Choose MongoDB, MySQL, or In-Memory storage  
 🔐 **JWT Authentication** - Secure auth with bcrypt and JWT tokens  
 🛡️ **Enterprise Security** - Helmet, rate limiting, input validation, injection prevention  
-📁 **Clean Architecture** - Organized routes, controllers, and models  
+� **Docker Ready** - Complete Docker Compose setup with database UI  
+�📁 **Clean Architecture** - Organized routes, controllers, and models  
 🎯 **ES6 Modules** - Modern JavaScript with import/export  
 ⚡ **Zero Config** - Interactive setup, start coding immediately  
 ➕ **Smart Resource Generation** - Auto-detects database type  
@@ -226,7 +227,64 @@ Creates `postman-collection.json` with:
 - ✅ Example payloads
 - ✅ Import to Postman and start testing!
 
-## 📁 Project Structure
+## � Docker Support
+
+Add Docker Compose configuration to your project:
+
+```bash
+cd my-api
+add-docker
+```
+
+**What it creates:**
+- ✅ `Dockerfile` - Multi-stage build for production
+- ✅ `docker-compose.yml` - Complete orchestration
+- ✅ `.dockerignore` - Optimized build context
+- ✅ `README.docker.md` - Complete Docker guide
+- ✅ `/health` endpoint - Container health checks
+
+**Database-Specific Setup:**
+
+### MongoDB Projects
+```yaml
+services:
+  - app (Node.js)
+  - mongodb (Database)
+  - mongo-express (UI at :8081)
+```
+
+### MySQL Projects
+```yaml
+services:
+  - app (Node.js)
+  - mysql (Database)
+  - phpmyadmin (UI at :8080)
+```
+
+### In-Memory Projects
+```yaml
+services:
+  - app (Node.js only)
+```
+
+**Quick Start:**
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+**Access:**
+- 📱 API: http://localhost:3000
+- 🌐 MongoDB UI: http://localhost:8081 (admin/admin123)
+- 🌐 MySQL UI: http://localhost:8080
+
+## �📁 Project Structure
 
 ```
 my-api/
@@ -368,6 +426,7 @@ JWT_EXPIRES_IN=24h
 | `add-crud <ResourceName>` | Add new CRUD resource (must be inside project) |
 | `add-auth` | Add JWT authentication (must be inside project) |
 | `gen-postman` | Generate Postman Collection (must be inside project) |
+| `add-docker` | Add Docker & Docker Compose setup (must be inside project) |
 
 ## 🤝 Contributing
 
