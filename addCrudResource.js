@@ -121,7 +121,7 @@ const ${resourceName} = mongoose.model('${resourceName}', ${resourceLower}Schema
 export default ${resourceName};
 `;
     } else if (dbChoice === 'mysql') {
-        return `import { db } from '../server.js';
+        return `import db from '../config/database.js';
 
 class ${resourceName} {
     static async getAll() {

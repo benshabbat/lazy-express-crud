@@ -102,7 +102,8 @@ const directories = [
     path.join(projectPath, 'src', 'routes'),
     path.join(projectPath, 'src', 'controllers'),
     path.join(projectPath, 'src', 'models'),
-    path.join(projectPath, 'src', 'middlewares')
+    path.join(projectPath, 'src', 'middlewares'),
+    path.join(projectPath, 'src', 'config')
 ];
 
 directories.forEach(dir => {
@@ -145,10 +146,10 @@ const packageJson = {
     }
 };
 
-// server.js template based on database choice
-const getServerTemplate = (dbChoice) => {
-    const mongoConnection = dbChoice === 'mongodb' ? `
-import mongoose from 'mongoose';
+// Database configuration template
+const getDatabaseConfigTemplate = (dbChoice) => {
+    if (dbChoice === 'mongodb') {
+        return `import mongoose from 'mongoose';
 
 // MongoDB Connection with security options
 const connectDB = async () => {
@@ -168,14 +169,13 @@ const connectDB = async () => {
     }
 };
 
-connectDB();
-` : '';
-
-    const mysqlConnection = dbChoice === 'mysql' ? `
-import mysql from 'mysql2/promise';
+export default connectDB;
+`;
+    } else if (dbChoice === 'mysql') {
+        return `import mysql from 'mysql2/promise';
 
 // MySQL Connection Pool
-export const db = mysql.createPool({
+const db = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
@@ -195,7 +195,15 @@ db.getConnection()
         console.error('❌ MySQL connection error:', err);
         process.exit(1);
     });
-` : '';
+
+export default db;
+`;
+    }
+    return '';
+};
+
+// server.js template based on database choice
+const getServerTemplate = (dbChoice) => {
 
     return `import 'dotenv/config';
 import express from 'express';
@@ -203,7 +211,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import itemRoutes from './routes/itemRoutes.js';
-${dbChoice === 'mongodb' ? "import mongoose from 'mongoose';\n" : ''}${dbChoice === 'mysql' ? "import mysql from 'mysql2/promise';\n" : ''}
+${dbChoice === 'mongodb' ? "import connectDB from './config/database.js';\n" : ''}${dbChoice === 'mysql' ? "import db from './config/database.js';\n" : ''}
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -215,7 +223,7 @@ if (missingEnvVars.length > 0) {
     console.error('Please check your .env file');
     process.exit(1);
 }
-${mongoConnection}${mysqlConnection}
+${dbChoice === 'mongodb' ? '\n// Connect to MongoDB\nconnectDB();\n' : ''}${dbChoice === 'mysql' ? '\n// MySQL connection pool is ready\n// Import db in models: import db from \'../config/database.js\';\n' : ''}
 // Security Middleware
 app.use(helmet()); // Security headers
 
@@ -566,7 +574,7 @@ const Item = mongoose.model('Item', itemSchema);
 export default Item;
 `;
     } else if (dbChoice === 'mysql') {
-        return `import { db } from '../server.js';
+        return `import db from '../config/database.js';
 
 class Item {
     static async getAll() {
@@ -870,6 +878,8 @@ DELETE http://localhost:3000/api/items/:id
 \`\`\`
 ${projectName}/
 ├── src/
+│   ├── config/
+│   │   └── database.js${dbChoice === 'mongodb' || dbChoice === 'mysql' ? ' (database connection)' : ''}
 │   ├── controllers/
 │   │   └── itemController.js
 │   ├── models/
@@ -937,6 +947,14 @@ const files = [
     { path: path.join(projectPath, '.gitignore'), content: gitignoreTemplate },
     { path: path.join(projectPath, 'README.md'), content: getReadmeTemplate(dbChoice) }
 ];
+
+// Add database config file if using MongoDB or MySQL
+if (dbChoice === 'mongodb' || dbChoice === 'mysql') {
+    files.push({
+        path: path.join(projectPath, 'src', 'config', 'database.js'),
+        content: getDatabaseConfigTemplate(dbChoice)
+    });
+}
 
 files.forEach(file => {
     try {

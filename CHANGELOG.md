@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Database configuration** moved to separate `src/config/database.js` file for better organization
+- Models now import database connection from `config/database.js` instead of `server.js`
+
 ### Fixed
 - **add-auth** now skips User.js creation if it already exists (allows adding User resource before auth)
 - **add-auth** no longer imports authMiddleware to server.js (it should only be imported in route files that need it)
