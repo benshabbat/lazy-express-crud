@@ -18,6 +18,408 @@ if (!resourceName) {
     process.exit(1);
 }
 
+// TypeScript template generators (declared early since they're used in getModelTemplate, etc.)
+function getModelTemplateTS() {
+    const resourceLower = resourceName.toLowerCase();
+    const resourcePlural = resourceLower + 's';
+    
+    if (dbChoice === 'mongodb') {
+        return `import mongoose, { Schema, Document } from 'mongoose';
+
+export interface I${resourceName} extends Document {
+    name: string;
+    description?: string;
+}
+
+const ${resourceLower}Schema = new Schema<I${resourceName}>({
+    name: {
+        type: String,
+        required: [true, 'Name is required'],
+        trim: true
+    },
+    description: {
+        type: String,
+        trim: true,
+        default: ''
+    }
+}, {
+    timestamps: true
+});
+
+const ${resourceName} = mongoose.model<I${resourceName}>('${resourceName}', ${resourceLower}Schema);
+
+export default ${resourceName};
+`;
+    } else if (dbChoice === 'mysql') {
+        return `import db from '../config/database.js';
+import { RowDataPacket, ResultSetHeader } from 'mysql2';
+
+interface ${resourceName}Data {
+    id?: string;
+    name: string;
+    description?: string;
+    created_at?: Date;
+    updated_at?: Date;
+}
+
+class ${resourceName}Model {
+    static async getAll(): Promise<${resourceName}Data[]> {
+        const [rows] = await db.query<RowDataPacket[]>('SELECT * FROM ${resourcePlural} ORDER BY created_at DESC');
+        return rows as ${resourceName}Data[];
+    }
+
+    static async getById(id: string): Promise<${resourceName}Data | undefined> {
+        const [rows] = await db.query<RowDataPacket[]>('SELECT * FROM ${resourcePlural} WHERE id = ?', [id]);
+        return rows[0] as ${resourceName}Data | undefined;
+    }
+
+    static async create(data: ${resourceName}Data): Promise<${resourceName}Data> {
+        const { name, description } = data;
+        const [result] = await db.query<ResultSetHeader>(
+            'INSERT INTO ${resourcePlural} (name, description) VALUES (?, ?)',
+            [name, description || '']
+        );
+        return {
+            id: result.insertId.toString(),
+            name,
+            description: description || ''
+        };
+    }
+
+    static async update(id: string, data: Partial<${resourceName}Data>): Promise<${resourceName}Data | null> {
+        const { name, description } = data;
+        const updates: string[] = [];
+        const values: any[] = [];
+        
+        if (name !== undefined) {
+            updates.push('name = ?');
+            values.push(name);
+        }
+        if (description !== undefined) {
+            updates.push('description = ?');
+            values.push(description);
+        }
+        
+        if (updates.length === 0) return null;
+        
+        values.push(id);
+        const [result] = await db.query<ResultSetHeader>(
+            \`UPDATE ${resourcePlural} SET \${updates.join(', ')} WHERE id = ?\`,
+            values
+        );
+        
+        if (result.affectedRows === 0) return null;
+        return await ${resourceName}Model.getById(id) || null;
+    }
+
+    static async delete(id: string): Promise<boolean> {
+        const [result] = await db.query<ResultSetHeader>('DELETE FROM ${resourcePlural} WHERE id = ?', [id]);
+        return result.affectedRows > 0;
+    }
+
+    static async initTable(): Promise<void> {
+        await db.query(\`
+            CREATE TABLE IF NOT EXISTS ${resourcePlural} (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        \`);
+    }
+}
+
+export default ${resourceName}Model;
+`;
+    } else {
+        // In-memory
+        return `interface ${resourceName}Data {
+    id: string;
+    name: string;
+    description?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+let ${resourcePlural}: ${resourceName}Data[] = [
+    { 
+        id: '1', 
+        name: '${resourceName} 1', 
+        description: 'Description 1',
+        createdAt: new Date().toISOString()
+    },
+    { 
+        id: '2', 
+        name: '${resourceName} 2', 
+        description: 'Description 2',
+        createdAt: new Date().toISOString()
+    }
+];
+
+class ${resourceName}Model {
+    static getAll(): ${resourceName}Data[] {
+        return ${resourcePlural};
+    }
+
+    static getById(id: string): ${resourceName}Data | undefined {
+        return ${resourcePlural}.find(item => item.id === id);
+    }
+
+    static create(data: Omit<${resourceName}Data, 'id'>): ${resourceName}Data {
+        const newItem: ${resourceName}Data = {
+            id: Date.now().toString(),
+            name: data.name,
+            description: data.description || '',
+            createdAt: new Date().toISOString()
+        };
+        ${resourcePlural}.push(newItem);
+        return newItem;
+    }
+
+    static update(id: string, data: Partial<${resourceName}Data>): ${resourceName}Data | null {
+        const index = ${resourcePlural}.findIndex(item => item.id === id);
+        if (index === -1) return null;
+
+        ${resourcePlural}[index] = {
+            ...${resourcePlural}[index],
+            ...data,
+            id: ${resourcePlural}[index].id,
+            updatedAt: new Date().toISOString()
+        };
+        return ${resourcePlural}[index];
+    }
+
+    static delete(id: string): boolean {
+        const index = ${resourcePlural}.findIndex(item => item.id === id);
+        if (index === -1) return false;
+
+        ${resourcePlural}.splice(index, 1);
+        return true;
+    }
+}
+
+export default ${resourceName}Model;
+`;
+    }
+}
+
+function getControllerTemplateTS() {
+    const resourceLower = resourceName.toLowerCase();
+    const resourcePlural = resourceLower + 's';
+    const isAsync = dbChoice === 'mongodb' || dbChoice === 'mysql';
+    const modelFileName = `${resourceName}.${ext}`;
+    
+    return `import { Request, Response } from 'express';
+import ${resourceName} from '../models/${modelFileName}';
+${dbChoice === 'mongodb' ? "import mongoose from 'mongoose';\n" : ''}
+// GET all ${resourcePlural}
+export const getAll${resourceName}s = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const items = ${isAsync ? 'await ' : ''}${resourceName}.${dbChoice === 'mongodb' ? 'find()' : 'getAll()'};
+        res.json({
+            success: true,
+            count: items.length,
+            data: items
+        });
+    } catch (error) {
+        console.error('Error fetching ${resourcePlural}:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch ${resourcePlural}'
+        });
+    }
+};
+
+// GET ${resourceLower} by id
+export const get${resourceName}ById = async (req: Request, res: Response): Promise<void> => {
+    try {
+        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            res.status(400).json({
+                success: false,
+                error: 'Invalid ID format'
+            });
+            return;
+        }
+        ` : ''}const item = ${isAsync ? 'await ' : ''}${resourceName}.${dbChoice === 'mongodb' ? 'findById(req.params.id)' : 'getById(req.params.id)'};
+        if (!item) {
+            res.status(404).json({
+                success: false,
+                error: '${resourceName} not found'
+            });
+            return;
+        }
+        res.json({
+            success: true,
+            data: item
+        });
+    } catch (error) {
+        console.error('Error fetching ${resourceLower}:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch ${resourceLower}'
+        });
+    }
+};
+
+// POST create ${resourceLower}
+export const create${resourceName} = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { name, description } = req.body;
+        
+        // Input validation
+        if (!name || typeof name !== 'string') {
+            res.status(400).json({
+                success: false,
+                error: 'Name is required and must be a string'
+            });
+            return;
+        }
+
+        if (name.length > 255) {
+            res.status(400).json({
+                success: false,
+                error: 'Name must be less than 255 characters'
+            });
+            return;
+        }
+
+        if (description && typeof description !== 'string') {
+            res.status(400).json({
+                success: false,
+                error: 'Description must be a string'
+            });
+            return;
+        }
+
+        if (description && description.length > 2000) {
+            res.status(400).json({
+                success: false,
+                error: 'Description must be less than 2000 characters'
+            });
+            return;
+        }
+
+        const newItem = ${isAsync ? 'await ' : ''}${resourceName}.create({ name, description });
+        res.status(201).json({
+            success: true,
+            data: newItem
+        });
+    } catch (error) {
+        console.error('Error creating ${resourceLower}:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to create ${resourceLower}'
+        });
+    }
+};
+
+// PUT update ${resourceLower}
+export const update${resourceName} = async (req: Request, res: Response): Promise<void> => {
+    try {
+        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            res.status(400).json({
+                success: false,
+                error: 'Invalid ID format'
+            });
+            return;
+        }
+        ` : ''}const { name, description } = req.body;
+        
+        // Input validation
+        if (name !== undefined) {
+            if (typeof name !== 'string' || name.length > 255) {
+                res.status(400).json({
+                    success: false,
+                    error: 'Name must be a string with max 255 characters'
+                });
+                return;
+            }
+        }
+
+        if (description !== undefined) {
+            if (typeof description !== 'string' || description.length > 2000) {
+                res.status(400).json({
+                    success: false,
+                    error: 'Description must be a string with max 2000 characters'
+                });
+                return;
+            }
+        }
+
+        ${dbChoice === 'mongodb' ? 
+            `const updatedItem = await ${resourceName}.findByIdAndUpdate(
+            req.params.id, 
+            { name, description },
+            { new: true, runValidators: true }
+        );` : 
+            `const updatedItem = ${isAsync ? 'await ' : ''}${resourceName}.update(req.params.id, { name, description });`
+        }
+        
+        if (!updatedItem) {
+            res.status(404).json({
+                success: false,
+                error: '${resourceName} not found'
+            });
+            return;
+        }
+
+        res.json({
+            success: true,
+            data: updatedItem
+        });
+    } catch (error) {
+        console.error('Error updating ${resourceLower}:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update ${resourceLower}'
+        });
+    }
+};
+
+// DELETE ${resourceLower}
+export const delete${resourceName} = async (req: Request, res: Response): Promise<void> => {
+    try {
+        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            res.status(400).json({
+                success: false,
+                error: 'Invalid ID format'
+            });
+            return;
+        }
+        ` : ''}${dbChoice === 'mongodb' ? 
+            `const deleted = await ${resourceName}.findByIdAndDelete(req.params.id);
+        
+        if (!deleted) {` : 
+            `const deleted = ${isAsync ? 'await ' : ''}${resourceName}.delete(req.params.id);
+        
+        if (!deleted) {`
+        }
+            res.status(404).json({
+                success: false,
+                error: '${resourceName} not found'
+            });
+            return;
+        }
+
+        res.json({
+            success: true,
+            message: '${resourceName} deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting ${resourceLower}:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to delete ${resourceLower}'
+        });
+    }
+};
+`;
+}
+
 // Validate resource name
 function validateResourceName(name) {
     // Check length (prevent DoS and filesystem issues)
@@ -59,6 +461,9 @@ if (!fs.existsSync(srcDir) || !fs.existsSync(packageJsonPath)) {
 
 // Detect database type from package.json
 let dbChoice = 'memory';
+let isTypeScript = false;
+let ext = 'js';
+
 try {
     if (!fs.existsSync(packageJsonPath)) {
         console.error('❌ Error: package.json not found at:', packageJsonPath);
@@ -69,6 +474,16 @@ try {
     
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
     const dependencies = packageJson.dependencies || {};
+    const devDependencies = packageJson.devDependencies || {};
+    
+    // Detect TypeScript
+    if (devDependencies.typescript || devDependencies.tsx) {
+        isTypeScript = true;
+        ext = 'ts';
+        console.log('✅ Detected: TypeScript project');
+    } else {
+        console.log('✅ Detected: JavaScript project');
+    }
     
     if (dependencies.mongoose) {
         dbChoice = 'mongodb';
@@ -88,9 +503,9 @@ try {
 // Generate names
 const resourceLower = resourceName.toLowerCase();
 const resourcePlural = resourceLower + 's';
-const routeFileName = `${resourceLower}Routes.js`;
-const controllerFileName = `${resourceLower}Controller.js`;
-const modelFileName = `${resourceName}.js`;
+const routeFileName = `${resourceLower}Routes.${ext}`;
+const controllerFileName = `${resourceLower}Controller.${ext}`;
+const modelFileName = `${resourceName}.${ext}`;
 
 console.log(`\n🚀 Adding new CRUD resource: ${resourceName}\n`);
 
@@ -103,6 +518,10 @@ if (fs.existsSync(modelPath)) {
 
 // Model template based on database choice
 const getModelTemplate = () => {
+    if (isTypeScript) {
+        return getModelTemplateTS();
+    }
+    
     if (dbChoice === 'mongodb') {
         return `import mongoose from 'mongoose';
 
@@ -268,6 +687,10 @@ export default ${resourceName};
 
 // Controller template based on database choice
 const getControllerTemplate = () => {
+    if (isTypeScript) {
+        return getControllerTemplateTS();
+    }
+    
     const isAsync = dbChoice === 'mongodb' || dbChoice === 'mysql';
     
     return `import ${resourceName} from '../models/${modelFileName}';
@@ -520,8 +943,8 @@ files.forEach(file => {
     }
 });
 
-// Update server.js
-const serverPath = path.join(srcDir, 'server.js');
+// Update server.js/server.ts
+const serverPath = path.join(srcDir, `server.${ext}`);
 try {
     let serverContent = fs.readFileSync(serverPath, 'utf8');
     
@@ -556,9 +979,9 @@ try {
     }
     
     fs.writeFileSync(serverPath, serverContent);
-    console.log(`✅ Updated server.js with ${resourceName} routes`);
+    console.log(`✅ Updated server.${ext} with ${resourceName} routes`);
 } catch (error) {
-    console.log(`⚠️  Note: Could not automatically update server.js: ${error.message}`);
+    console.log(`⚠️  Note: Could not automatically update server.${ext}: ${error.message}`);
     console.log('Please add the routes manually.');
 }
 

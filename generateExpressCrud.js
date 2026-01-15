@@ -5,6 +5,15 @@ import path from 'path';
 import readline from 'readline';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import {
+    getTsConfigTemplate,
+    getTypesTemplate,
+    getServerTemplateTS,
+    getDatabaseConfigTemplateTS,
+    getRoutesTemplateTS,
+    getControllerTemplateTS,
+    getModelTemplateTS
+} from './typescript-templates.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -83,6 +92,30 @@ function askDatabaseChoice() {
     });
 }
 
+// Function to ask user for language choice
+function askLanguageChoice() {
+    return new Promise((resolve) => {
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+
+        console.log('\n💻 Choose your language:');
+        console.log('1. JavaScript (ES6+)');
+        console.log('2. TypeScript');
+        
+        rl.question('\nEnter your choice (1/2): ', (answer) => {
+            rl.close();
+            const choice = answer.trim();
+            if (choice === '2') {
+                resolve('typescript');
+            } else {
+                resolve('javascript');
+            }
+        });
+    });
+}
+
 // Create project directory
 const projectPath = path.join(process.cwd(), projectName);
 
@@ -94,10 +127,17 @@ if (fs.existsSync(projectPath)) {
 
 // Main async function
 async function createProject() {
+    // Ask for language choice
+    const langChoice = await askLanguageChoice();
+    
     // Ask for database choice
     const dbChoice = await askDatabaseChoice();
     
+    const isTypeScript = langChoice === 'typescript';
+    const ext = isTypeScript ? 'ts' : 'js';
+    
     console.log(`\n🚀 Creating Express CRUD project: ${projectName}`);
+    console.log(`💻 Language: ${isTypeScript ? 'TypeScript' : 'JavaScript'}`);
     console.log(`📊 Database: ${dbChoice === 'mongodb' ? 'MongoDB' : dbChoice === 'mysql' ? 'MySQL' : 'In-Memory'}`);
 
 // Create directory structure
@@ -108,7 +148,8 @@ const directories = [
     path.join(projectPath, 'src', 'controllers'),
     path.join(projectPath, 'src', 'models'),
     path.join(projectPath, 'src', 'middlewares'),
-    path.join(projectPath, 'src', 'config')
+    path.join(projectPath, 'src', 'config'),
+    ...(isTypeScript ? [path.join(projectPath, 'src', 'types')] : [])
 ];
 
 directories.forEach(dir => {
@@ -128,9 +169,14 @@ const packageJson = {
     name: projectName,
     version: '1.0.0',
     description: 'Express CRUD API',
-    main: 'src/server.js',
+    main: isTypeScript ? 'dist/server.js' : 'src/server.js',
     type: 'module',
-    scripts: {
+    scripts: isTypeScript ? {
+        build: 'tsc',
+        start: 'node dist/server.js',
+        dev: 'tsx watch src/server.ts',
+        'type-check': 'tsc --noEmit'
+    } : {
         start: 'node src/server.js',
         dev: 'nodemon src/server.js'
     },
@@ -147,7 +193,15 @@ const packageJson = {
         ...(dbChoice === 'mysql' && { mysql2: '^3.6.5' })
     },
     devDependencies: {
-        nodemon: '^3.0.1'
+        ...(isTypeScript ? {
+            typescript: '^5.3.3',
+            tsx: '^4.7.0',
+            '@types/node': '^20.10.6',
+            '@types/express': '^4.17.21',
+            '@types/cors': '^2.8.17'
+        } : {
+            nodemon: '^3.0.1'
+        })
     }
 };
 
@@ -944,20 +998,28 @@ ISC
 // Write all files
 const files = [
     { path: path.join(projectPath, 'package.json'), content: JSON.stringify(packageJson, null, 2) },
-    { path: path.join(projectPath, 'src', 'server.js'), content: getServerTemplate(dbChoice) },
-    { path: path.join(projectPath, 'src', 'routes', 'itemRoutes.js'), content: routesTemplate },
-    { path: path.join(projectPath, 'src', 'controllers', 'itemController.js'), content: getControllerTemplate(dbChoice) },
-    { path: path.join(projectPath, 'src', 'models', 'Item.js'), content: getModelTemplate(dbChoice) },
+    { path: path.join(projectPath, `src/server.${ext}`), content: isTypeScript ? getServerTemplateTS(dbChoice, projectName) : getServerTemplate(dbChoice) },
+    { path: path.join(projectPath, `src/routes/itemRoutes.${ext}`), content: isTypeScript ? getRoutesTemplateTS() : routesTemplate },
+    { path: path.join(projectPath, `src/controllers/itemController.${ext}`), content: isTypeScript ? getControllerTemplateTS(dbChoice) : getControllerTemplate(dbChoice) },
+    { path: path.join(projectPath, `src/models/Item.${ext}`), content: isTypeScript ? getModelTemplateTS(dbChoice) : getModelTemplate(dbChoice) },
     { path: path.join(projectPath, '.env'), content: getEnvTemplate(dbChoice) },
-    { path: path.join(projectPath, '.gitignore'), content: gitignoreTemplate },
+    { path: path.join(projectPath, '.gitignore'), content: isTypeScript ? gitignoreTemplate + 'dist/\n' : gitignoreTemplate },
     { path: path.join(projectPath, 'README.md'), content: getReadmeTemplate(dbChoice) }
 ];
+
+// Add TypeScript specific files
+if (isTypeScript) {
+    files.push(
+        { path: path.join(projectPath, 'tsconfig.json'), content: getTsConfigTemplate() },
+        { path: path.join(projectPath, `src/types/index.${ext}`), content: getTypesTemplate(dbChoice) }
+    );
+}
 
 // Add database config file if using MongoDB or MySQL
 if (dbChoice === 'mongodb' || dbChoice === 'mysql') {
     files.push({
-        path: path.join(projectPath, 'src', 'config', 'database.js'),
-        content: getDatabaseConfigTemplate(dbChoice)
+        path: path.join(projectPath, `src/config/database.${ext}`),
+        content: isTypeScript ? getDatabaseConfigTemplateTS(dbChoice, projectName) : getDatabaseConfigTemplate(dbChoice)
     });
 }
 

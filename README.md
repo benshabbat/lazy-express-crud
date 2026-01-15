@@ -5,21 +5,22 @@
 [![Security: 10/10](https://img.shields.io/badge/Security-10%2F10-brightgreen.svg)](./SECURITY-FINAL-REPORT.md)
 [![Production Ready](https://img.shields.io/badge/Production-Ready-success.svg)](./SECURITY-FINAL-REPORT.md)
 
-> 🚀 Production-ready Express.js CRUD API generator with MongoDB/MySQL support, JWT authentication, and enterprise-grade security (10/10)
+> 🚀 Production-ready Express.js CRUD API generator with MongoDB/MySQL support, JWT authentication, TypeScript/JavaScript, and enterprise-grade security (10/10)
 
-Instantly scaffold a secure Express.js REST API with your choice of database (MongoDB, MySQL, or In-Memory), complete CRUD operations, JWT authentication, and security best practices built-in.
+Instantly scaffold a secure Express.js REST API with your choice of database (MongoDB, MySQL, or In-Memory), **TypeScript or JavaScript**, complete CRUD operations, JWT authentication, and security best practices built-in.
 
 ## ✨ Features
 
 ### Core Features
+💻 **TypeScript Support** - Choose between TypeScript or JavaScript  
 ✨ **Multi-Database Support** - Choose MongoDB, MySQL, or In-Memory storage  
 🔐 **JWT Authentication** - Secure auth with bcrypt and JWT tokens  
 🛡️ **Enterprise Security** - Helmet, rate limiting, input validation, injection prevention  
 � **Docker Ready** - Complete Docker Compose setup with database UI  
 �📁 **Clean Architecture** - Organized routes, controllers, and models  
-🎯 **ES6 Modules** - Modern JavaScript with import/export  
+🎯 **ES6 Modules** - Modern JavaScript/TypeScript with import/export  
 ⚡ **Zero Config** - Interactive setup, start coding immediately  
-➕ **Smart Resource Generation** - Auto-detects database type  
+➕ **Smart Resource Generation** - Auto-detects database type and language  
 🌐 **Production Ready** - CORS whitelist, HTTPS enforcement, SSL/TLS support  
 📦 **Lightweight** - Minimal, carefully selected dependencies
 
@@ -58,6 +59,12 @@ lazy-crud my-api
 
 **Interactive Setup:**
 ```
+💻 Choose your language:
+1. JavaScript (ES6+)
+2. TypeScript
+
+Enter your choice (1/2): 2
+
 📊 Choose your database:
 1. MongoDB (NoSQL)
 2. MySQL (SQL)
@@ -68,6 +75,16 @@ Enter your choice (1/2/3): 1
 
 ### 2. Start Your Server
 
+**For TypeScript Projects:**
+```bash
+cd my-api
+npm install
+npm run dev        # Development with auto-reload
+npm run build      # Build for production
+npm start          # Run production build
+```
+
+**For JavaScript Projects:**
 ```bash
 cd my-api
 npm install
@@ -75,6 +92,34 @@ npm run dev
 ```
 
 Your secure API is now running at `http://localhost:3000`! 🎉
+
+## 💻 TypeScript vs JavaScript
+
+### TypeScript Projects
+- ✅ Full type safety with TypeScript
+- ✅ Auto-completion and IntelliSense
+- ✅ Compile-time error checking
+- ✅ Interface definitions for models
+- ✅ Type-safe Express handlers
+- ✅ Better refactoring support
+- 📁 Source in `src/`, compiled to `dist/`
+- 🛠️ Uses `tsx` for fast development
+- 🔧 Includes `tsconfig.json` with strict mode
+
+### JavaScript Projects  
+- ✅ Quick and simple setup
+- ✅ No compilation step needed
+- ✅ Modern ES6+ syntax
+- ✅ ES modules (import/export)
+- 📁 Direct execution from `src/`
+- 🛠️ Uses `nodemon` for auto-reload
+
+**Both options include:**
+- Full CRUD operations
+- JWT authentication
+- Security best practices
+- Database support
+- Clean architecture
 
 ## 📊 Database Options
 
