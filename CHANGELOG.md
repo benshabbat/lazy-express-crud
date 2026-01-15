@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-01-15
+
+### Added - TypeScript Support 💻
+- **Full TypeScript Support** - Choose between TypeScript or JavaScript during project creation
+  - Interactive language selection prompt at project setup
+  - TypeScript projects include complete type definitions
+  - JavaScript projects remain unchanged with ES6+ modules
+  
+- **TypeScript Project Features:**
+  - `tsconfig.json` with strict mode enabled
+  - Complete type definitions for all models, controllers, and routes
+  - Type-safe Express request/response handlers
+  - Interface definitions for database models
+  - `tsx` for fast development with hot-reload
+  - Separate `src/` and `dist/` directories
+  - Full type safety with proper generics
+  
+- **Updated Commands:**
+  - `lazy-crud` - Now asks for language preference (JS/TS)
+  - `add-crud` - Auto-detects project language and creates matching files (.js/.ts)
+  - `add-auth` - Generates TypeScript auth files for TS projects
+  
+- **TypeScript Templates:**
+  - Type-safe models with interfaces (MongoDB, MySQL, In-Memory)
+  - Typed controllers with Request/Response types
+  - Type-safe routes with proper Express types
+  - Database configuration with Promise types
+  - Comprehensive type definitions in `src/types/`
+  
+- **Developer Experience:**
+  - `npm run dev` - Development with tsx watch mode (TS) or nodemon (JS)
+  - `npm run build` - TypeScript compilation (TS projects only)
+  - `npm run type-check` - Type checking without compilation
+  - Full IDE support with IntelliSense and auto-completion
+  
+- **Documentation:**
+  - Updated README with TypeScript vs JavaScript comparison
+  - Added TypeScript setup instructions
+  - Type safety benefits explained
+  - Both workflows documented
+
+### Changed
+- Package description updated to highlight TypeScript support
+- Added TypeScript-related keywords to package.json
+- Version bumped to 1.5.0 (minor version for new feature)
+
 ## [1.4.1] - 2026-01-06
 
 ### Security - Docker Security Hardening 🔒
