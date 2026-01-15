@@ -18,6 +18,14 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Security: Sanitize error messages for production
+function sanitizeError(error) {
+    if (process.env.NODE_ENV === 'production') {
+        return 'An error occurred. Please check your configuration.';
+    }
+    return error.message || error.toString();
+}
+
 // Get project name from command line arguments
 const projectName = process.argv[2] || 'express-crud-app';
 

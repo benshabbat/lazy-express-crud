@@ -8,6 +8,60 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Security: Sanitize error messages for production
+function sanitizeError(error) {
+    if (process.env.NODE_ENV === 'production') {
+        return 'An error occurred. Please check your configuration.';
+    }
+    return error.message || error.toString();
+}
+
+// Security: Validate path to prevent path traversal
+function validatePath(inputPath) {
+    const normalized = path.normalize(inputPath);
+    if (normalized.includes('..') || normalized.includes('~')) {
+        throw new Error('Invalid path: Path traversal detected');
+    }
+    if (normalized.length > 500) {
+        throw new Error('Path too long');
+    }
+    return normalized;
+}
+
+// Security: Check if path is within project directory
+function isPathInProject(targetPath, projectRoot) {
+    const normalizedTarget = path.resolve(projectRoot, targetPath);
+    const normalizedRoot = path.resolve(projectRoot);
+    return normalizedTarget.startsWith(normalizedRoot);
+}
+
+// Security: Validate resource name
+function validateResourceName(name) {
+    // Check length (prevent DoS)
+    if (!name || name.length === 0 || name.length > 100) {
+        throw new Error('Resource name must be between 1 and 100 characters');
+    }
+    
+    // Check for valid PascalCase pattern
+    const validPattern = /^[A-Z][a-zA-Z0-9]*$/;
+    if (!validPattern.test(name)) {
+        throw new Error('Resource name must be in PascalCase (e.g., User, ProductItem)');
+    }
+    
+    // Prevent path traversal
+    if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+        throw new Error('Resource name cannot contain path separators');
+    }
+    
+    // Prevent reserved names
+    const reserved = ['Node', 'Process', 'Global', 'Console', 'Module', 'Require'];
+    if (reserved.includes(name)) {
+        throw new Error(`"${name}" is a reserved name and cannot be used`);
+    }
+    
+    return true;
+}
+
 // Get resource name from command line arguments
 const resourceName = process.argv[2];
 
@@ -15,6 +69,14 @@ if (!resourceName) {
     console.error('❌ Error: Please provide a resource name');
     console.log('\nUsage: add-crud <ResourceName>');
     console.log('Example: add-crud User');
+    process.exit(1);
+}
+
+// Validate resource name
+try {
+    validateResourceName(resourceName);
+} catch (error) {
+    console.error('❌ Error:', error.message);
     process.exit(1);
 }
 
@@ -470,6 +532,18 @@ try {
         console.error('Current directory:', currentDir);
         console.error('Please run this command from your Express CRUD project root directory');
         process.exit(1);
+    }
+    
+    // Security: Check file size before reading (max 10MB)
+    const stats = fs.statSync(packageJsonPath);
+    if (stats.size > 10 * 1024 * 1024) {
+        throw new Error('package.json file too large (max 10MB)');
+    }
+    
+    // Security: Validate path
+    validatePath(packageJsonPath);
+    if (!isPathInProject(packageJsonPath, currentDir)) {
+        throw new Error('Security: package.json path is outside project directory');
     }
     
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
