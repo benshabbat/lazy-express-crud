@@ -90,7 +90,7 @@ function createUserModel() {
 
   // Check if User file already exists
   if (fs.existsSync(modelPath)) {
-    console.log(`⚠ User.${ext} already exists - skipping creation`);
+    console.log("⚠ User." + ext + " already exists - skipping creation");
     console.log("  Please add bcrypt and JWT methods to your existing User model");
     return;
   }
@@ -266,13 +266,15 @@ export default new User();
 `;
 
   fs.writeFileSync(modelPath, modelContent);
-  console.log(`✓ Created User model with bcrypt (User.${ext})`);
+  console.log("✓ Created User model with bcrypt (User." + ext + ")");
 }
 
 // Create auth controller with JWT
 function createAuthController() {
+  const isTS = isTypeScriptProject();
+  const ext = isTS ? 'ts' : 'js';
   const controllerDir = path.join(process.cwd(), "src", "controllers");
-  const controllerPath = path.join(controllerDir, "authController.js");
+  const controllerPath = path.join(controllerDir, `authController.${ext}`);
 
   // Security: Validate paths
   validatePath(controllerDir);
@@ -285,7 +287,106 @@ function createAuthController() {
     fs.mkdirSync(controllerDir, { recursive: true });
   }
 
-  const controllerContent = `import jwt from 'jsonwebtoken';
+  const controllerContent = isTS ? `import { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
+
+// Security: JWT secret should be in .env file
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+
+// Generate JWT token
+function generateToken(userId: string): string {
+  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+}
+
+// Register new user
+export async function register(req: Request, res: Response): Promise<void> {
+  try {
+    const { username, email, password } = req.body;
+
+    // Security: Input validation
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    // Create user with hashed password
+    const user = await User.create({ username, email, password });
+
+    // Generate token
+    const token = generateToken(user.id);
+
+    res.status(201).json({
+      message: 'User registered successfully',
+      user,
+      token
+    });
+  } catch (error: any) {
+    console.error('Register error:', error);
+    
+    if (error.message === 'User already exists') {
+      return res.status(409).json({ message: error.message });
+    }
+    
+    res.status(400).json({ message: error.message || 'Registration failed' });
+  }
+}
+
+// Login user
+export async function login(req: Request, res: Response): Promise<void> {
+  try {
+    const { email, password } = req.body;
+
+    // Security: Input validation
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    // Find user
+    const user = await User.findByEmail(email);
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Check password
+    const isPasswordValid = await User.comparePassword(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Generate token
+    const token = generateToken(user.id);
+
+    // Return user without password
+    const { password: _, ...userWithoutPassword } = user;
+
+    res.json({
+      message: 'Login successful',
+      user: userWithoutPassword,
+      token
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Login failed' });
+  }
+}
+
+// Get current user (protected route)
+export async function getCurrentUser(req: Request & { userId?: string }, res: Response): Promise<void> {
+  try {
+    const user = await User.findById(req.userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ user });
+  } catch (error) {
+    console.error('Get current user error:', error);
+    res.status(500).json({ message: 'Failed to get user' });
+  }
+}
+` : `import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
 // Security: JWT secret should be in .env file
@@ -391,8 +492,10 @@ export async function getCurrentUser(req, res) {
 
 // Create auth routes
 function createAuthRoutes() {
+  const isTS = isTypeScriptProject();
+  const ext = isTS ? 'ts' : 'js';
   const routesDir = path.join(process.cwd(), "src", "routes");
-  const routesPath = path.join(routesDir, "authRoutes.js");
+  const routesPath = path.join(routesDir, `authRoutes.${ext}`);
 
   // Security: Validate paths
   validatePath(routesDir);
@@ -427,8 +530,10 @@ export default router;
 
 // Create auth middleware
 function createAuthMiddleware() {
+  const isTS = isTypeScriptProject();
+  const ext = isTS ? 'ts' : 'js';
   const middlewareDir = path.join(process.cwd(), "src", "middlewares");
-  const middlewarePath = path.join(middlewareDir, "authMiddleware.js");
+  const middlewarePath = path.join(middlewareDir, `authMiddleware.${ext}`);
 
   // Security: Validate paths
   validatePath(middlewareDir);
@@ -441,7 +546,50 @@ function createAuthMiddleware() {
     fs.mkdirSync(middlewareDir, { recursive: true });
   }
 
-  const middlewareContent = `import jwt from 'jsonwebtoken';
+  const middlewareContent = isTS ? `import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+
+// Security: JWT secret should be in .env file
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
+
+export function authMiddleware(req: Request & { userId?: string }, res: Response, next: NextFunction): void {
+  try {
+    // Get token from header
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'No token provided' });
+    }
+
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+
+    // Security: Input validation
+    if (!token || typeof token !== 'string' || token.length > 500) {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
+    
+    // Add user id to request
+    req.userId = decoded.id;
+    
+    next();
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expired' });
+    }
+    
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+    
+    res.status(401).json({ message: 'Authentication failed' });
+  }
+}
+` : `import jwt from 'jsonwebtoken';
 
 // Security: JWT secret should be in .env file
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
@@ -489,14 +637,17 @@ export function authMiddleware(req, res, next) {
   console.log("✓ Created auth middleware");
 }
 
-// Update server.js to include auth routes
+// Update server.js/server.ts to include auth routes
 function updateServerJs() {
-  // Try multiple possible locations for server.js
+  const isTS = isTypeScriptProject();
+  const ext = isTS ? 'ts' : 'js';
+  
+  // Try multiple possible locations for server file
   const possiblePaths = [
-    path.join(process.cwd(), "server.js"),
-    path.join(process.cwd(), "src", "server.js"),
-    path.join(process.cwd(), "app.js"),
-    path.join(process.cwd(), "src", "app.js")
+    path.join(process.cwd(), "server." + ext),
+    path.join(process.cwd(), "src", "server." + ext),
+    path.join(process.cwd(), "app." + ext),
+    path.join(process.cwd(), "src", "app." + ext)
   ];
 
   let serverPath = null;
@@ -508,7 +659,7 @@ function updateServerJs() {
   }
 
   if (!serverPath) {
-    console.log("⚠ server.js not found. Please add auth routes manually:");
+    console.log("⚠ server." + ext + " not found. Please add auth routes manually:");
     console.log("  import authRoutes from './routes/authRoutes.js';");
     console.log("  app.use('/api/auth', authRoutes);");
     return;
@@ -530,16 +681,16 @@ function updateServerJs() {
 
   // Check if auth routes already imported
   if (serverContent.includes("authRoutes")) {
-    console.log("⚠ Auth routes already exist in server.js");
+    console.log("⚠ Auth routes already exist in server." + ext);
     return;
   }
 
   // Determine the correct import path based on server.js location
-  const isServerInSrc = serverPath.includes(path.join("src", "server.js")) || 
-                        serverPath.includes(path.join("src", "app.js"));
+  const isServerInSrc = serverPath.includes(path.join("src", "server." + ext)) || 
+                        serverPath.includes(path.join("src", "app." + ext));
   const authRoutesImportPath = isServerInSrc 
-    ? `import authRoutes from './routes/authRoutes.js';\n`
-    : `import authRoutes from './src/routes/authRoutes.js';\n`;
+    ? "import authRoutes from './routes/authRoutes.js';\n"
+    : "import authRoutes from './src/routes/authRoutes.js';\n";
 
   // Add import statement after other route imports
   const importMatch = serverContent.match(/(import.*Routes.*from.*['"]\.\/(src\/)?routes\/.*['"];?\n)/);
@@ -570,7 +721,7 @@ function updateServerJs() {
     const routeIndex = serverContent.lastIndexOf(lastRoute) + lastRoute.length;
     serverContent =
       serverContent.slice(0, routeIndex) +
-      `app.use('/api/auth', authRoutes);\n` +
+      "app.use('/api/auth', authRoutes);\n" +
       serverContent.slice(routeIndex);
   } else {
     // If no routes found, add before app.listen
@@ -579,13 +730,13 @@ function updateServerJs() {
       const listenIndex = serverContent.indexOf(listenMatch[0]);
       serverContent =
         serverContent.slice(0, listenIndex) +
-        `\n// Auth routes\napp.use('/api/auth', authRoutes);\n\n` +
+        "\n// Auth routes\napp.use('/api/auth', authRoutes);\n\n" +
         serverContent.slice(listenIndex);
     }
   }
 
   fs.writeFileSync(serverPath, serverContent);
-  console.log("✓ Updated server.js with auth routes");
+  console.log("✓ Updated server." + ext + " with auth routes");
 }
 
 // Update package.json to include dependencies
@@ -628,6 +779,24 @@ function updatePackageJson() {
     dependenciesAdded = true;
   }
 
+  // Add TypeScript type definitions if it's a TypeScript project
+  const isTS = isTypeScriptProject();
+  if (isTS) {
+    if (!packageJson.devDependencies) {
+      packageJson.devDependencies = {};
+    }
+    
+    if (!packageJson.devDependencies['@types/bcryptjs']) {
+      packageJson.devDependencies['@types/bcryptjs'] = "^2.4.6";
+      dependenciesAdded = true;
+    }
+    
+    if (!packageJson.devDependencies['@types/jsonwebtoken']) {
+      packageJson.devDependencies['@types/jsonwebtoken'] = "^9.0.5";
+      dependenciesAdded = true;
+    }
+  }
+
   if (dependenciesAdded) {
     fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
     console.log("✓ Updated package.json with auth dependencies");
@@ -667,14 +836,7 @@ function updateEnvFile() {
   // Security: Generate a strong random secret (64 bytes = 128 hex chars)
   const randomSecret = crypto.randomBytes(64).toString("hex");
 
-  const authEnvContent = `
-# JWT Authentication
-# Security: Change this secret in production!
-JWT_SECRET=${randomSecret}
-JWT_EXPIRES_IN=24h
-# Note: Consider implementing rate limiting for auth endpoints
-# Recommended: express-rate-limit package
-`;
+  const authEnvContent = "\n# JWT Authentication\n# Security: Change this secret in production!\nJWT_SECRET=" + randomSecret + "\nJWT_EXPIRES_IN=24h\n# Note: Consider implementing rate limiting for auth endpoints\n# Recommended: express-rate-limit package\n";
 
   fs.writeFileSync(envPath, envContent + authEnvContent);
   console.log("✓ Updated .env with JWT configuration");
