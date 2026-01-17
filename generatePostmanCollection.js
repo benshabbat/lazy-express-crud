@@ -93,8 +93,8 @@ try {
     
     // Validate each file
     routeFiles = files.filter(file => {
-        // Security: Check for valid filename pattern
-        const validPattern = /^[a-zA-Z0-9_-]+Routes\.js$/;
+        // Security: Check for valid filename pattern (support both .js and .ts)
+        const validPattern = /^[a-zA-Z0-9_-]+Routes\.(js|ts)$/;
         if (!validPattern.test(file)) {
             return false;
         }
@@ -128,8 +128,8 @@ console.log(`Found ${routeFiles.length} route file(s):`);
 const collectionItems = [];
 
 routeFiles.forEach(file => {
-    // Security: Sanitize the base name
-    const baseName = file.replace('Routes.js', '').replace(/[^a-zA-Z0-9_-]/g, '');
+    // Security: Sanitize the base name (support both .js and .ts)
+    const baseName = file.replace(/Routes\.(js|ts)$/, '').replace(/[^a-zA-Z0-9_-]/g, '');
     
     // Validate length
     if (baseName.length === 0 || baseName.length > 100) {
