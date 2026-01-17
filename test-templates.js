@@ -29,8 +29,8 @@ export function getJestConfigTS() {
     return `export default {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/src'],
-  testMatch: ['**/__tests__/**/*.test.ts', '**/?(*.)+(spec|test).ts'],
+  roots: ['<rootDir>/tests'],
+  testMatch: ['**/*.test.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
@@ -79,8 +79,6 @@ const mock${resourceName} = {
 };
 
 describe('${resourceName} CRUD Operations', () => {
-    let created${resourceName}Id;
-
     // Setup: Connect to test database
     beforeAll(async () => {
         const testDbUri = process.env.TEST_MONGODB_URI || 'mongodb://localhost:27017/test-db';
@@ -758,8 +756,6 @@ const mock${resourceName}: Partial<I${resourceName}> = {
 };
 
 describe('${resourceName} CRUD Operations', () => {
-    let created${resourceName}Id: string;
-
     // Setup: Connect to test database
     beforeAll(async () => {
         const testDbUri = process.env.TEST_MONGODB_URI || 'mongodb://localhost:27017/test-db';
