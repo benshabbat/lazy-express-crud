@@ -490,34 +490,6 @@ export const delete${resourceName} = async (req: Request, res: Response): Promis
 `;
 }
 
-// Validate resource name
-function validateResourceName(name) {
-    // Check length (prevent DoS and filesystem issues)
-    if (name.length === 0 || name.length > 100) {
-        console.error('❌ Error: Resource name must be between 1 and 100 characters.');
-        process.exit(1);
-    }
-    
-    const validPattern = /^[A-Z][a-zA-Z0-9]*$/;
-    
-    if (!validPattern.test(name)) {
-        console.error('❌ Error: Resource name must start with uppercase letter and contain only letters and numbers.');
-        console.error('Example: User, Product, BlogPost');
-        process.exit(1);
-    }
-    
-    // Prevent JavaScript reserved words
-    const reserved = ['Object', 'Array', 'String', 'Number', 'Boolean', 'Function', 'Promise', 'Date', 'Error', 'JSON', 'Math', 'console', 'process', 'require', 'module', 'exports'];
-    if (reserved.includes(name)) {
-        console.error(`❌ Error: "${name}" is a reserved JavaScript name and cannot be used.`);
-        process.exit(1);
-    }
-    
-    return true;
-}
-
-validateResourceName(resourceName);
-
 // Check if we're in an Express CRUD project
 const currentDir = process.cwd();
 const srcDir = path.join(currentDir, 'src');
