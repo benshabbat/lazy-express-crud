@@ -14,6 +14,16 @@ import {
     getControllerTemplateTS,
     getModelTemplateTS
 } from './typescript-templates.js';
+import {
+    getJestConfigJS,
+    getJestConfigTS,
+    getTestTemplateMongoJS,
+    getTestTemplateMySQLJS,
+    getTestTemplateMemoryJS,
+    getTestTemplateMongoTS,
+    getTestTemplateMySQLTS,
+    getTestTemplateMemoryTS
+} from './test-templates.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -157,6 +167,7 @@ const directories = [
     path.join(projectPath, 'src', 'models'),
     path.join(projectPath, 'src', 'middlewares'),
     path.join(projectPath, 'src', 'config'),
+    path.join(projectPath, 'tests'),
     ...(isTypeScript ? [path.join(projectPath, 'src', 'types')] : [])
 ];
 
@@ -183,10 +194,16 @@ const packageJson = {
         build: 'tsc',
         start: 'node dist/server.js',
         dev: 'tsx watch src/server.ts',
-        'type-check': 'tsc --noEmit'
+        'type-check': 'tsc --noEmit',
+        test: 'node --experimental-vm-modules node_modules/jest/bin/jest.js',
+        'test:watch': 'node --experimental-vm-modules node_modules/jest/bin/jest.js --watch',
+        'test:coverage': 'node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage'
     } : {
         start: 'node src/server.js',
-        dev: 'nodemon src/server.js'
+        dev: 'nodemon src/server.js',
+        test: 'node --experimental-vm-modules node_modules/jest/bin/jest.js',
+        'test:watch': 'node --experimental-vm-modules node_modules/jest/bin/jest.js --watch',
+        'test:coverage': 'node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage'
     },
     keywords: ['express', 'crud', 'api'],
     author: '',
@@ -201,12 +218,17 @@ const packageJson = {
         ...(dbChoice === 'mysql' && { mysql2: '^3.6.5' })
     },
     devDependencies: {
+        jest: '^29.7.0',
+        supertest: '^6.3.4',
         ...(isTypeScript ? {
             typescript: '^5.3.3',
             tsx: '^4.7.0',
             '@types/node': '^20.10.6',
             '@types/express': '^4.17.21',
-            '@types/cors': '^2.8.17'
+            '@types/cors': '^2.8.17',
+            '@types/jest': '^29.5.11',
+            '@types/supertest': '^6.0.2',
+            'ts-jest': '^29.1.1'
         } : {
             nodemon: '^3.0.1'
         })
@@ -1030,6 +1052,29 @@ if (dbChoice === 'mongodb' || dbChoice === 'mysql') {
         content: isTypeScript ? getDatabaseConfigTemplateTS(dbChoice, projectName) : getDatabaseConfigTemplate(dbChoice)
     });
 }
+
+// Add Jest configuration file
+files.push({
+    path: path.join(projectPath, 'jest.config.js'),
+    content: isTypeScript ? getJestConfigTS() : getJestConfigJS()
+});
+
+// Add test file for Item resource
+const testFileName = `Item.test.${isTypeScript ? 'ts' : 'js'}`;
+let testContent;
+if (isTypeScript) {
+    testContent = dbChoice === 'mongodb' ? getTestTemplateMongoTS('Item') :
+                  dbChoice === 'mysql' ? getTestTemplateMySQLTS('Item') :
+                  getTestTemplateMemoryTS('Item');
+} else {
+    testContent = dbChoice === 'mongodb' ? getTestTemplateMongoJS('Item') :
+                  dbChoice === 'mysql' ? getTestTemplateMySQLJS('Item') :
+                  getTestTemplateMemoryJS('Item');
+}
+files.push({
+    path: path.join(projectPath, 'tests', testFileName),
+    content: testContent
+});
 
 files.forEach(file => {
     try {

@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-01-18
+
+### Added
+- 🧪 **Unit Testing Support** - Auto-generated Jest tests for every resource
+- Jest configuration file for both JavaScript and TypeScript projects
+- Test templates for MongoDB, MySQL, and In-Memory databases
+- Comprehensive test coverage for all CRUD operations
+- Test scripts in package.json: `test`, `test:watch`, `test:coverage`
+- supertest for HTTP assertions in tests
+- Automatic test file creation when adding new resources
+- Support for both JavaScript and TypeScript test files
+- tests/ directory in project structure
+- Database-specific testing strategies (ObjectId validation, SQL queries, etc.)
+
+### Changed
+- Updated project structure to include tests directory
+- Enhanced README with comprehensive testing documentation
+- Added Jest and supertest to devDependencies
+- Updated generateExpressCrud.js to create test files
+- Updated addCrudResource-single.js to create test files for new resources
+
+### Technical Details
+- Created test-templates.js with all test template functions
+- Implemented getJestConfigJS() and getJestConfigTS()
+- Implemented database-specific test templates (Mongo/MySQL/Memory)
+- Tests include: POST, GET, GET by ID, PUT, DELETE operations
+- Security validation tests (ObjectId/ID format validation)
+- Edge case testing (empty data, invalid data, non-existent resources)
+
 ## [Unreleased]
 
 ## [1.5.0] - 2026-01-15

@@ -4,6 +4,14 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import {
+    getTestTemplateMongoJS,
+    getTestTemplateMySQLJS,
+    getTestTemplateMemoryJS,
+    getTestTemplateMongoTS,
+    getTestTemplateMySQLTS,
+    getTestTemplateMemoryTS
+} from './test-templates.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -1006,6 +1014,29 @@ const files = [
         type: 'Routes'
     }
 ];
+
+// Add test file
+const testsDir = path.join(currentDir, 'tests');
+if (!fs.existsSync(testsDir)) {
+    fs.mkdirSync(testsDir, { recursive: true });
+}
+
+const testFileName = `${resourceName}.test.${ext}`;
+let testContent;
+if (isTypeScript) {
+    testContent = dbChoice === 'mongodb' ? getTestTemplateMongoTS(resourceName) :
+                  dbChoice === 'mysql' ? getTestTemplateMySQLTS(resourceName) :
+                  getTestTemplateMemoryTS(resourceName);
+} else {
+    testContent = dbChoice === 'mongodb' ? getTestTemplateMongoJS(resourceName) :
+                  dbChoice === 'mysql' ? getTestTemplateMySQLJS(resourceName) :
+                  getTestTemplateMemoryJS(resourceName);
+}
+files.push({
+    path: path.join(testsDir, testFileName),
+    content: testContent,
+    type: 'Test'
+});
 
 files.forEach(file => {
     try {

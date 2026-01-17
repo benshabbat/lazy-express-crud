@@ -22,7 +22,8 @@ Instantly scaffold a secure Express.js REST API with your choice of database (Mo
 ⚡ **Zero Config** - Interactive setup, start coding immediately  
 ➕ **Smart Resource Generation** - Auto-detects database type and language  
 🌐 **Production Ready** - CORS whitelist, HTTPS enforcement, SSL/TLS support  
-📦 **Lightweight** - Minimal, carefully selected dependencies
+📦 **Lightweight** - Minimal, carefully selected dependencies  
+🧪 **Unit Tests** - Auto-generated Jest tests for every resource
 
 ### Security Features (10/10 Score) 🏆
 🔒 **NoSQL/SQL Injection Prevention** - Validated queries and ObjectId checking  
@@ -239,6 +240,7 @@ add-crud User Product Category
 - ✅ Controller with validation & security
 - ✅ Routes with all CRUD operations
 - ✅ Updates server.js automatically
+- ✅ Unit tests with Jest for each resource
 
 **Bulk Creation:**
 - ✅ Create multiple resources in one command
@@ -271,6 +273,98 @@ Creates `postman-collection.json` with:
 - ✅ Pre-configured requests
 - ✅ Example payloads
 - ✅ Import to Postman and start testing!
+
+## 🧪 Unit Testing
+
+Every project includes **Jest** testing framework with auto-generated tests:
+
+### Running Tests
+
+```bash
+npm test                 # Run all tests
+npm run test:watch       # Watch mode for development
+npm run test:coverage    # Generate coverage report
+```
+
+### What's Tested
+
+Each resource gets comprehensive tests:
+- ✅ **CREATE** - Valid/invalid data, required fields, data validation
+- ✅ **READ** - Get all, get by ID, non-existent resources
+- ✅ **UPDATE** - Full/partial updates, validation, non-existent resources
+- ✅ **DELETE** - Successful deletion, non-existent resources
+- ✅ **Security** - ID validation (ObjectId for MongoDB, numeric for MySQL)
+- ✅ **Edge Cases** - Empty lists, special characters, boundary values
+
+### Test Structure
+
+```
+my-api/
+├── tests/
+│   ├── Item.test.js      # Auto-generated for default resource
+│   ├── User.test.js      # Auto-generated when you add User
+│   └── Product.test.js   # Auto-generated when you add Product
+├── jest.config.js         # Jest configuration
+└── package.json           # Includes jest & supertest
+```
+
+### Example Test Output
+
+```bash
+$ npm test
+
+PASS  tests/Item.test.js
+  Item CRUD Operations
+    POST /api/items
+      ✓ should create a new item (45ms)
+      ✓ should return 400 if name is missing (12ms)
+      ✓ should trim whitespace from name (18ms)
+    GET /api/items
+      ✓ should get all items (25ms)
+      ✓ should return empty array when no items exist (8ms)
+    GET /api/items/:id
+      ✓ should get an item by id (19ms)
+      ✓ should return 404 for non-existent item (11ms)
+      ✓ should return 400 for invalid ObjectId (9ms)
+    PUT /api/items/:id
+      ✓ should update an item (28ms)
+      ✓ should return 404 for non-existent item (10ms)
+    DELETE /api/items/:id
+      ✓ should delete an item (22ms)
+      ✓ should return 404 for non-existent item (9ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Time:        2.456s
+```
+
+### Database-Specific Testing
+
+**MongoDB Tests:**
+- Uses test database (`TEST_MONGODB_URI`)
+- Validates ObjectId format
+- Tests Mongoose schema validation
+
+**MySQL Tests:**
+- Creates test table automatically
+- Tests prepared statements
+- Validates numeric IDs
+
+**In-Memory Tests:**
+- No database setup needed
+- Fast execution
+- Perfect for CI/CD pipelines
+
+### Test Configuration
+
+Update `.env` for test database:
+```bash
+# For MongoDB
+TEST_MONGODB_URI=mongodb://localhost:27017/test-db
+
+# For MySQL (optional - uses same DB with different data)
+TEST_DB_NAME=my_api_test
+```
 
 ## � Docker Support
 
@@ -345,7 +439,14 @@ my-api/
 │   ├── middlewares/     # Auth & custom middleware
 │   │   └── authMiddleware.js
 │   └── server.js        # App entry point with security
-├── .env                 # Environment variables
+├── tests/               # Jest unit tests
+│   └── Item.test.js    # Auto-generated tests
+├── jest.config.js      # Jest configuration
+├── .env                # Environment variables
+├── .gitignore
+├── package.json
+└── README.md
+```
 ├── .gitignore          # Git ignore file
 ├── package.json        # Dependencies
 └── README.md           # Project documentation
@@ -442,6 +543,9 @@ JWT_EXPIRES_IN=24h
 
 - `npm start` - Start production server
 - `npm run dev` - Start development server with auto-reload (nodemon)
+- `npm test` - Run unit tests
+- `npm run test:watch` - Run tests in watch mode
+- `npm run test:coverage` - Run tests with coverage report
 
 ## 🛠️ Requirements
 
@@ -462,6 +566,8 @@ JWT_EXPIRES_IN=24h
 - **express-rate-limit** - Rate limiting middleware
 - **cors** - CORS middleware with whitelist support
 - **dotenv** - Environment variable management
+- **Jest** - Testing framework with 100% coverage support
+- **supertest** - HTTP assertions for API testing
 
 ## 📚 Commands Reference
 

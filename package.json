@@ -1,7 +1,7 @@
 {
   "name": "lazy-express-crud",
-  "version": "1.5.0",
-  "description": "Production-ready Express.js CRUD API generator with TypeScript/JavaScript support, MongoDB/MySQL, JWT authentication, Docker Compose, and enterprise-grade security (10/10 security score). Choose between TypeScript or JavaScript with full type safety or flexibility.",
+  "version": "1.6.0",
+  "description": "Production-ready Express.js CRUD API generator with TypeScript/JavaScript support, MongoDB/MySQL, JWT authentication, Docker Compose, auto-generated unit tests, and enterprise-grade security (10/10 security score). Choose between TypeScript or JavaScript with full type safety or flexibility.",
   "main": "generateExpressCrud.js",
   "type": "module",
   "bin": {
@@ -56,7 +56,13 @@
     "docker-compose",
     "containerization",
     "mongo-express",
-    "phpmyadmin"
+    "phpmyadmin",
+    "testing",
+    "jest",
+    "unit-tests",
+    "tdd",
+    "test-automation",
+    "supertest"
   ],
   "author": "DavidChen Benshabbat <benshabbat27@gmail.com>",
   "license": "MIT",
@@ -72,6 +78,8 @@
   },
   "homepage": "https://github.com/benshabbat/lazy-express-crud#readme",
   "files": [
+    "typescript-templates.js",
+    "test-templates.js",
     "generateExpressCrud.js",
     "addCrudResource.js",
     "addCrudResource-single.js",
