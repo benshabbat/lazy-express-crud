@@ -184,7 +184,10 @@ export function getDatabaseConfigTemplateTS(dbChoice, projectName) {
 // MongoDB Connection with security options
 const connectDB = async (): Promise<void> => {
     try {
-        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/${projectName}', {
+        if (!process.env.MONGODB_URI) {
+            throw new Error('MONGODB_URI is not defined in .env file');
+        }
+        await mongoose.connect(process.env.MONGODB_URI, {
             // Security: Use TLS/SSL in production
             ssl: process.env.NODE_ENV === 'production',
             // Timeout settings
@@ -205,11 +208,17 @@ export default connectDB;
         return `import mysql from 'mysql2/promise';
 
 // MySQL Connection Pool
+if (!process.env.DB_HOST || !process.env.DB_USER || !process.env.DB_NAME) {
+    console.error('❌ Missing MySQL configuration in .env file');
+    console.error('Required: DB_HOST, DB_USER, DB_NAME, DB_PASSWORD');
+    process.exit(1);
+}
+
 const db = mysql.createPool({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || '${projectName}',
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
