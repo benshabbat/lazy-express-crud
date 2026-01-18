@@ -164,6 +164,7 @@ const directories = [
     path.join(projectPath, 'src'),
     path.join(projectPath, 'src', 'routes'),
     path.join(projectPath, 'src', 'controllers'),
+    path.join(projectPath, 'src', 'services'),
     path.join(projectPath, 'src', 'models'),
     path.join(projectPath, 'src', 'middlewares'),
     path.join(projectPath, 'src', 'config'),
@@ -455,14 +456,12 @@ export default router;
 
 // itemController.js template based on database choice
 const getControllerTemplate = (dbChoice) => {
-    const isAsync = dbChoice === 'mongodb' || dbChoice === 'mysql';
-    
-    return `import Item from '../models/Item.js';
-${dbChoice === 'mongodb' ? "import mongoose from 'mongoose';\n" : ''}
+    return `import * as itemService from '../services/itemService.js';
+
 // GET all items
 export const getAllItems = async (req, res) => {
     try {
-        const items = ${isAsync ? 'await ' : ''}Item.${dbChoice === 'mongodb' ? 'find()' : 'getAll()'};
+        const items = await itemService.getAllItems();
         res.json({
             success: true,
             count: items.length,
@@ -472,7 +471,7 @@ export const getAllItems = async (req, res) => {
         console.error('Error fetching items:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch items'
+            error: error.message || 'Failed to fetch items'
         });
     }
 };
@@ -480,29 +479,18 @@ export const getAllItems = async (req, res) => {
 // GET item by id
 export const getItemById = async (req, res) => {
     try {
-        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid ID format'
-            });
-        }
-        ` : ''}const item = ${isAsync ? 'await ' : ''}Item.${dbChoice === 'mongodb' ? 'findById(req.params.id)' : 'getById(req.params.id)'};
-        if (!item) {
-            return res.status(404).json({
-                success: false,
-                error: 'Item not found'
-            });
-        }
+        const item = await itemService.getItemById(req.params.id);
         res.json({
             success: true,
             data: item
         });
     } catch (error) {
         console.error('Error fetching item:', error);
-        res.status(500).json({
+        const statusCode = error.message.includes('Invalid ID') ? 400 : 
+                          error.message.includes('not found') ? 404 : 500;
+        res.status(statusCode).json({
             success: false,
-            error: 'Failed to fetch item'
+            error: error.message || 'Failed to fetch item'
         });
     }
 };
@@ -510,47 +498,16 @@ export const getItemById = async (req, res) => {
 // POST create item
 export const createItem = async (req, res) => {
     try {
-        const { name, description, price } = req.body;
-        
-        // Input validation
-        if (!name || typeof name !== 'string') {
-            return res.status(400).json({
-                success: false,
-                error: 'Name is required and must be a string'
-            });
-        }
-
-        if (name.length > 255) {
-            return res.status(400).json({
-                success: false,
-                error: 'Name must be less than 255 characters'
-            });
-        }
-
-        if (description && typeof description !== 'string') {
-            return res.status(400).json({
-                success: false,
-                error: 'Description must be a string'
-            });
-        }
-
-        if (description && description.length > 2000) {
-            return res.status(400).json({
-                success: false,
-                error: 'Description must be less than 2000 characters'
-            });
-        }
-
-        const newItem = ${isAsync ? 'await ' : ''}Item.create({ name, description, price });
+        const newItem = await itemService.createItem(req.body);
         res.status(201).json({
             success: true,
             data: newItem
         });
     } catch (error) {
         console.error('Error creating item:', error);
-        res.status(500).json({
+        res.status(400).json({
             success: false,
-            error: 'Failed to create item'
+            error: error.message || 'Failed to create item'
         });
     }
 };
@@ -558,59 +515,18 @@ export const createItem = async (req, res) => {
 // PUT update item
 export const updateItem = async (req, res) => {
     try {
-        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid ID format'
-            });
-        }
-        ` : ''}const { name, description, price } = req.body;
-        
-        // Input validation
-        if (name !== undefined) {
-            if (typeof name !== 'string' || name.length > 255) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Name must be a string with max 255 characters'
-                });
-            }
-        }
-
-        if (description !== undefined) {
-            if (typeof description !== 'string' || description.length > 2000) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Description must be a string with max 2000 characters'
-                });
-            }
-        }
-
-        ${dbChoice === 'mongodb' ? 
-            `const updatedItem = await Item.findByIdAndUpdate(
-            req.params.id, 
-            { name, description, price },
-            { new: true, runValidators: true }
-        );` : 
-            `const updatedItem = ${isAsync ? 'await ' : ''}Item.update(req.params.id, { name, description, price });`
-        }
-        
-        if (!updatedItem) {
-            return res.status(404).json({
-                success: false,
-                error: 'Item not found'
-            });
-        }
-
+        const updatedItem = await itemService.updateItem(req.params.id, req.body);
         res.json({
             success: true,
             data: updatedItem
         });
     } catch (error) {
         console.error('Error updating item:', error);
-        res.status(500).json({
+        const statusCode = error.message.includes('Invalid ID') ? 400 : 
+                          error.message.includes('not found') ? 404 : 500;
+        res.status(statusCode).json({
             success: false,
-            error: 'Failed to update item'
+            error: error.message || 'Failed to update item'
         });
     }
 };
@@ -618,45 +534,124 @@ export const updateItem = async (req, res) => {
 // DELETE item
 export const deleteItem = async (req, res) => {
     try {
-        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid ID format'
-            });
-        }
-        ` : ''}${dbChoice === 'mongodb' ? 
-            `const deleted = await Item.findByIdAndDelete(req.params.id);
-        
-        if (!deleted) {` : 
-            `const deleted = ${isAsync ? 'await ' : ''}Item.delete(req.params.id);
-        
-        if (!deleted) {`
-        }
-            return res.status(404).json({
-                success: false,
-                error: 'Item not found'
-            });
-        }
-
+        await itemService.deleteItem(req.params.id);
         res.json({
             success: true,
             message: 'Item deleted successfully'
         });
     } catch (error) {
         console.error('Error deleting item:', error);
-        res.status(500).json({
+        const statusCode = error.message.includes('Invalid ID') ? 400 : 
+                          error.message.includes('not found') ? 404 : 500;
+        res.status(statusCode).json({
             success: false,
-            error: 'Failed to delete item'
+            error: error.message || 'Failed to delete item'
         });
     }
 };
 `;
 };
 
+// itemService.js template - Business logic layer
+const getServiceTemplate = (dbChoice) => {
+    const isAsync = dbChoice === 'mongodb' || dbChoice === 'mysql';
+    
+    return `import Item from '../models/Item.js';
+${dbChoice === 'mongodb' ? "import mongoose from 'mongoose';\n" : ''}
+// Get all items
+export const getAllItems = async () => {
+    return ${isAsync ? 'await ' : ''}Item.${dbChoice === 'mongodb' ? 'find()' : 'getAll()'};
+};
+
+// Get item by id
+export const getItemById = async (id) => {
+    ${dbChoice === 'mongodb' ? `// Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new Error('Invalid ID format');
+    }
+    ` : ''}const item = ${isAsync ? 'await ' : ''}Item.${dbChoice === 'mongodb' ? 'findById(id)' : 'getById(id)'};
+    if (!item) {
+        throw new Error('Item not found');
+    }
+    return item;
+};
+
+// Create new item
+export const createItem = async (data) => {
+    const { name, description, price } = data;
+    
+    // Validation
+    if (!name || typeof name !== 'string') {
+        throw new Error('Name is required and must be a string');
+    }
+    if (name.length > 255) {
+        throw new Error('Name must be less than 255 characters');
+    }
+    if (description && typeof description !== 'string') {
+        throw new Error('Description must be a string');
+    }
+    if (description && description.length > 2000) {
+        throw new Error('Description must be less than 2000 characters');
+    }
+
+    return ${isAsync ? 'await ' : ''}Item.create({ name, description, price });
+};
+
+// Update item
+export const updateItem = async (id, data) => {
+    ${dbChoice === 'mongodb' ? `// Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new Error('Invalid ID format');
+    }
+    ` : ''}const { name, description, price } = data;
+    
+    // Validation
+    if (name !== undefined) {
+        if (typeof name !== 'string' || name.length > 255) {
+            throw new Error('Name must be a string with max 255 characters');
+        }
+    }
+    if (description !== undefined) {
+        if (typeof description !== 'string' || description.length > 2000) {
+            throw new Error('Description must be a string with max 2000 characters');
+        }
+    }
+
+    ${dbChoice === 'mongodb' ? 
+        `const updatedItem = await Item.findByIdAndUpdate(
+        id, 
+        { name, description, price },
+        { new: true, runValidators: true }
+    );` : 
+        `const updatedItem = ${isAsync ? 'await ' : ''}Item.update(id, { name, description, price });`
+    }
+    
+    if (!updatedItem) {
+        throw new Error('Item not found');
+    }
+    return updatedItem;
+};
+
+// Delete item
+export const deleteItem = async (id) => {
+    ${dbChoice === 'mongodb' ? `// Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new Error('Invalid ID format');
+    }
+    ` : ''}${dbChoice === 'mongodb' ? 
+        `const deleted = await Item.findByIdAndDelete(id);` : 
+        `const deleted = ${isAsync ? 'await ' : ''}Item.delete(id);`
+    }
+    
+    if (!deleted) {
+        throw new Error('Item not found');
+    }
+    return deleted;
+};
+`;
+};
+
 // Item.js model template based on database choice
-const getModelTemplate = (dbChoice) => {
-    if (dbChoice === 'mongodb') {
         return `import mongoose from 'mongoose';
 
 const itemSchema = new mongoose.Schema({
@@ -1062,6 +1057,7 @@ const files = [
     { path: path.join(projectPath, `src/server.${ext}`), content: isTypeScript ? getServerTemplateTS(dbChoice, projectName) : getServerTemplate(dbChoice) },
     { path: path.join(projectPath, `src/routes/itemRoutes.${ext}`), content: isTypeScript ? getRoutesTemplateTS() : routesTemplate },
     { path: path.join(projectPath, `src/controllers/itemController.${ext}`), content: isTypeScript ? getControllerTemplateTS(dbChoice) : getControllerTemplate(dbChoice) },
+    { path: path.join(projectPath, `src/services/itemService.${ext}`), content: isTypeScript ? getServiceTemplateTS(dbChoice) : getServiceTemplate(dbChoice) },
     { path: path.join(projectPath, `src/models/Item.${ext}`), content: isTypeScript ? getModelTemplateTS(dbChoice) : getModelTemplate(dbChoice) },
     { path: path.join(projectPath, '.env'), content: getEnvTemplate(dbChoice) },
     { path: path.join(projectPath, '.gitignore'), content: isTypeScript ? gitignoreTemplate + 'dist/\n' : gitignoreTemplate },
