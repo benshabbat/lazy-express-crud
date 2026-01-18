@@ -241,12 +241,24 @@ const getDatabaseConfigTemplate = (dbChoice) => {
         return `import mongoose from 'mongoose';
 
 // MongoDB Connection with security options
+if (!process.env.MONGODB_HOST || !process.env.MONGODB_DATABASE) {
+    console.error('❌ Missing MongoDB configuration in .env file');
+    console.error('Required: MONGODB_HOST, MONGODB_DATABASE');
+    console.error('Optional: MONGODB_USER, MONGODB_PASSWORD, MONGODB_PORT');
+    process.exit(1);
+}
+
 const connectDB = async () => {
     try {
-        if (!process.env.MONGODB_URI) {
-            throw new Error('MONGODB_URI is not defined in .env file');
-        }
-        await mongoose.connect(process.env.MONGODB_URI, {
+        // Build MongoDB URI from components
+        const port = process.env.MONGODB_PORT || '27017';
+        const hasAuth = process.env.MONGODB_USER && process.env.MONGODB_PASSWORD;
+        
+        const uri = hasAuth
+            ? \`mongodb://\${process.env.MONGODB_USER}:\${process.env.MONGODB_PASSWORD}@\${process.env.MONGODB_HOST}:\${port}/\${process.env.MONGODB_DATABASE}\`
+            : \`mongodb://\${process.env.MONGODB_HOST}:\${port}/\${process.env.MONGODB_DATABASE}\`;
+        
+        await mongoose.connect(uri, {
             // Security: Use TLS/SSL in production
             ssl: process.env.NODE_ENV === 'production',
             // Timeout settings
@@ -256,7 +268,7 @@ const connectDB = async () => {
         console.log('✅ MongoDB connected successfully');
     } catch (error) {
         console.error('❌ MongoDB connection error:', error);
-        console.error('Please check your MONGODB_URI in .env file');
+        console.error('Please check your MongoDB configuration in .env file');
         process.exit(1);
     }
 };
@@ -824,13 +836,23 @@ NODE_ENV=development
         template += `
 # MongoDB Connection
 # Development (no authentication):
-MONGODB_URI=mongodb://localhost:27017/${projectName}
+MONGODB_HOST=localhost
+MONGODB_PORT=27017
+MONGODB_DATABASE=${projectName}
+# MONGODB_USER=
+# MONGODB_PASSWORD=
 
-# Production (with authentication and SSL - REQUIRED!):
-# MONGODB_URI=mongodb://username:password@host:port/${projectName}?authSource=admin&ssl=true
+# Production (with authentication - REQUIRED!):
+# MONGODB_HOST=your-production-host
+# MONGODB_PORT=27017
+# MONGODB_USER=your-mongodb-user
+# MONGODB_PASSWORD=your-secure-password
+# MONGODB_DATABASE=${projectName}
 #
-# MongoDB Atlas (cloud with TLS):
-# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/${projectName}?retryWrites=true&w=majority&ssl=true
+# MongoDB Atlas (cloud):
+# For Atlas, use the host from your connection string without mongodb://
+# Example: MONGODB_HOST=cluster0.abcde.mongodb.net
+# Then enable authentication with your Atlas credentials
 `;
     } else if (dbChoice === 'mysql') {
         template += `

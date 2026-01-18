@@ -182,12 +182,24 @@ export function getDatabaseConfigTemplateTS(dbChoice, projectName) {
         return `import mongoose from 'mongoose';
 
 // MongoDB Connection with security options
+if (!process.env.MONGODB_HOST || !process.env.MONGODB_DATABASE) {
+    console.error('❌ Missing MongoDB configuration in .env file');
+    console.error('Required: MONGODB_HOST, MONGODB_DATABASE');
+    console.error('Optional: MONGODB_USER, MONGODB_PASSWORD, MONGODB_PORT');
+    process.exit(1);
+}
+
 const connectDB = async (): Promise<void> => {
     try {
-        if (!process.env.MONGODB_URI) {
-            throw new Error('MONGODB_URI is not defined in .env file');
-        }
-        await mongoose.connect(process.env.MONGODB_URI, {
+        // Build MongoDB URI from components
+        const port = process.env.MONGODB_PORT || '27017';
+        const hasAuth = process.env.MONGODB_USER && process.env.MONGODB_PASSWORD;
+        
+        const uri = hasAuth
+            ? \`mongodb://\${process.env.MONGODB_USER}:\${process.env.MONGODB_PASSWORD}@\${process.env.MONGODB_HOST}:\${port}/\${process.env.MONGODB_DATABASE}\`
+            : \`mongodb://\${process.env.MONGODB_HOST}:\${port}/\${process.env.MONGODB_DATABASE}\`;
+        
+        await mongoose.connect(uri, {
             // Security: Use TLS/SSL in production
             ssl: process.env.NODE_ENV === 'production',
             // Timeout settings
@@ -197,7 +209,7 @@ const connectDB = async (): Promise<void> => {
         console.log('✅ MongoDB connected successfully');
     } catch (error) {
         console.error('❌ MongoDB connection error:', error);
-        console.error('Please check your MONGODB_URI in .env file');
+        console.error('Please check your MongoDB configuration in .env file');
         process.exit(1);
     }
 };
