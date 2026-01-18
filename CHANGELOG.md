@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2] - 2026-01-18
+
+### Changed
+- 🔧 **MongoDB Configuration** - Split MongoDB URI into separate components
+  - `MONGODB_HOST`, `MONGODB_PORT`, `MONGODB_DATABASE` (required)
+  - `MONGODB_USER`, `MONGODB_PASSWORD` (optional, for authentication)
+  - Automatically builds connection URI based on authentication presence
+- 🔧 **MySQL Configuration** - Removed default fallback values
+  - All MySQL variables now required in .env file
+  - Better error messages for missing configuration
+- 🔒 **Security Improvement** - Database connections now fail fast if .env is misconfigured
+  - No silent fallbacks to default values
+  - Clear error messages indicating which variables are missing
+
 ## [1.6.1] - 2026-01-18
 
 ### Fixed
