@@ -5,55 +5,10 @@ import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { validatePath, validateProjectName } from './src/validators/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-// Security: Validate project name
-function validateProjectName(name) {
-    if (!name || typeof name !== 'string') {
-        throw new Error('Project name must be a non-empty string');
-    }
-    
-    // Check length (prevent DoS and filesystem issues)
-    if (name.length === 0 || name.length > 100) {
-        throw new Error('Project name must be between 1 and 100 characters');
-    }
-    
-    // Allow only safe characters: letters, numbers, hyphens, underscores
-    const validPattern = /^[a-zA-Z0-9_-]+$/;
-    if (!validPattern.test(name)) {
-        throw new Error('Project name can only contain letters, numbers, hyphens, and underscores');
-    }
-    
-    // Prevent reserved/dangerous names
-    const reserved = ['node_modules', '.git', '.env', 'docker', 'bin', 'etc', 'usr', 'var', 'tmp'];
-    if (reserved.includes(name.toLowerCase())) {
-        throw new Error(`"${name}" is a reserved name and cannot be used`);
-    }
-    
-    return name;
-}
-
-// Security: Validate path to prevent path traversal
-function validatePath(inputPath) {
-    const normalized = path.normalize(inputPath);
-    
-    // Prevent path traversal
-    if (normalized.includes('..') || normalized.includes('\0')) {
-        throw new Error('Invalid path: Path traversal detected');
-    }
-    
-    // Prevent absolute paths outside project
-    if (path.isAbsolute(normalized)) {
-        const relative = path.relative(process.cwd(), normalized);
-        if (relative.startsWith('..')) {
-            throw new Error('Invalid path: Outside project directory');
-        }
-    }
-    
-    return normalized;
-}
 
 // Check if we're in an Express CRUD project
 const currentDir = process.cwd();

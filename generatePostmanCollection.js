@@ -4,20 +4,10 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { validatePath, isPathInProject } from './src/validators/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-// Validate and sanitize paths
-function validatePath(inputPath) {
-    // Prevent path traversal
-    const normalized = path.normalize(inputPath);
-    if (normalized.includes('..') || normalized.includes('\0')) {
-        console.error('❌ Error: Invalid path detected');
-        process.exit(1);
-    }
-    return normalized;
-}
 
 // Check if we're in an Express CRUD project
 const currentDir = validatePath(process.cwd());
@@ -25,13 +15,7 @@ const srcDir = path.join(currentDir, 'src');
 const routesDir = path.join(srcDir, 'routes');
 const packageJsonPath = path.join(currentDir, 'package.json');
 
-// Security: Verify paths are within project directory
-function isPathInProject(targetPath) {
-    const relative = path.relative(currentDir, targetPath);
-    return !relative.startsWith('..') && !path.isAbsolute(relative);
-}
-
-if (!isPathInProject(srcDir) || !isPathInProject(packageJsonPath)) {
+if (!isPathInProject(srcDir, currentDir) || !isPathInProject(packageJsonPath, currentDir)) {
     console.error('❌ Error: Security violation - paths outside project directory');
     process.exit(1);
 }

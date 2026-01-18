@@ -5,17 +5,11 @@ import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { validatePath, isPathInProject } from './src/validators/index.js';
+import { sanitizeError } from './src/utils/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-// Security: Sanitize error messages for production
-function sanitizeError(error) {
-    if (process.env.NODE_ENV === 'production') {
-        return 'An error occurred. Please check your configuration.';
-    }
-    return error.message || error.toString();
-}
 
 // Security: Sanitize string to prevent injection attacks
 function sanitizeString(input) {
@@ -24,25 +18,6 @@ function sanitizeString(input) {
   }
   // Remove null bytes and control characters
   return input.replace(/[\x00-\x1F\x7F]/g, '');
-}
-
-// Security: Validate path to prevent path traversal
-function validatePath(inputPath) {
-  const normalized = path.normalize(inputPath);
-  if (normalized.includes("..") || normalized.includes("~")) {
-    throw new Error("Invalid path: Path traversal detected");
-  }
-  if (normalized.length > 500) {
-    throw new Error("Path too long");
-  }
-  return normalized;
-}
-
-// Security: Check if path is within project directory
-function isPathInProject(targetPath, projectRoot) {
-  const normalizedTarget = path.resolve(projectRoot, targetPath);
-  const normalizedRoot = path.resolve(projectRoot);
-  return normalizedTarget.startsWith(normalizedRoot);
 }
 
 // Check if current directory is an Express project
