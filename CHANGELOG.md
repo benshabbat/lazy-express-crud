@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-01-18
+
+### Added
+- 📁 **Project Structure Organization** - New `src/` directory with proper separation of concerns
+  - `src/validators/` - All validation logic (path, project name, resource name)
+  - `src/utils/` - Utility functions (error handling, sanitization)
+  - `src/templates/javascript/` - JavaScript code templates (controller, service, model)
+  - `src/templates/typescript/` - TypeScript code templates (config, types, server, etc.)
+- 📚 **Documentation** - Added `src/STRUCTURE.md` documenting the new project structure
+- 🔄 **Backward Compatibility** - Created compatibility layers for gradual migration
+  - `shared-templates-new.js` - Re-exports JS templates and validators
+  - `typescript-templates-new.js` - Re-exports TS templates
+
+### Changed
+- ♻️ **Code Deduplication** - Removed ~200 lines of duplicate validation code
+  - Updated `generateAuth.js`, `addDocker.js`, `addCrudResource.js`, `generatePostmanCollection.js`
+  - All now use centralized validators and utilities from `src/`
+- 🏗️ **Better Organization** - Separated templates into logical modules
+  - JavaScript templates split into controller, service, model files
+  - TypeScript templates organized by functionality (config, types, server, database, etc.)
+  - Centralized exports via index.js files
+
+### Improved
+- 🧪 **Maintainability** - Each module now has single responsibility
+- 📦 **Scalability** - Easy to add new templates and validators
+- 🔍 **Testability** - Isolated functions are easier to test
+- 📖 **Developer Experience** - Cleaner imports and better code organization
+
+### Technical Details
+- 25 files changed: 1,286 additions, 145 deletions
+- Total code reduction: ~345 lines of duplicate code eliminated across all refactoring
+- All generator files now use shared validators and utilities
+
 ## [1.6.2] - 2026-01-18
 
 ### Changed
