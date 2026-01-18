@@ -17,7 +17,7 @@ import {
     validatePath,
     isPathInProject,
     validateResourceName
-} from './shared-templates.js';
+} from './shared-templates-new.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

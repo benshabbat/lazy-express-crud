@@ -14,7 +14,7 @@ import {
     getControllerTemplateTS,
     getServiceTemplateTS,
     getModelTemplateTS
-} from './typescript-templates.js';
+} from './typescript-templates-new.js';
 import {
     getJestConfigJS,
     getJestConfigTS,
@@ -31,7 +31,7 @@ import {
     getControllerTemplate,
     getServiceTemplate,
     getModelTemplate
-} from './shared-templates.js';
+} from './shared-templates-new.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
