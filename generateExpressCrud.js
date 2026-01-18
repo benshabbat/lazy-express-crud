@@ -652,6 +652,8 @@ export const deleteItem = async (id) => {
 };
 
 // Item.js model template based on database choice
+const getModelTemplate = (dbChoice) => {
+    if (dbChoice === 'mongodb') {
         return `import mongoose from 'mongoose';
 
 const itemSchema = new mongoose.Schema({
