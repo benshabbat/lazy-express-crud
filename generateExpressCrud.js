@@ -12,6 +12,7 @@ import {
     getDatabaseConfigTemplateTS,
     getRoutesTemplateTS,
     getControllerTemplateTS,
+    getServiceTemplateTS,
     getModelTemplateTS
 } from './typescript-templates.js';
 import {
