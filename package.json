@@ -1,6 +1,6 @@
 {
   "name": "lazy-express-crud",
-  "version": "1.6.2",
+  "version": "1.7.0",
   "description": "Production-ready Express.js CRUD API generator with TypeScript/JavaScript support, MongoDB/MySQL, JWT authentication, Docker Compose, auto-generated unit tests, and enterprise-grade security (10/10 security score). Choose between TypeScript or JavaScript with full type safety or flexibility.",
   "main": "generateExpressCrud.js",
   "type": "module",
