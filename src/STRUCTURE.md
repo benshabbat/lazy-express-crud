@@ -14,8 +14,16 @@ scriptsForJs/
 │   │   │   ├── serviceTemplate.js
 │   │   │   ├── modelTemplate.js
 │   │   │   └── index.js
-│   │   ├── typescript/       # TypeScript templates (future)
-│   │   └── shared/           # Shared templates (future)
+│   │   └── typescript/       # TypeScript templates
+│   │       ├── configTemplate.js
+│   │       ├── typesTemplate.js
+│   │       ├── serverTemplate.js
+│   │       ├── databaseTemplate.js
+│   │       ├── routesTemplate.js
+│   │       ├── controllerTemplate.js
+│   │       ├── serviceTemplate.js
+│   │       ├── modelTemplate.js
+│   │       └── index.js
 │   ├── utils/                # Utility functions
 │   │   ├── errorUtils.js
 │   │   └── index.js
@@ -24,7 +32,8 @@ scriptsForJs/
 │       ├── nameValidators.js
 │       └── index.js
 ├── bin/                      # CLI executables (future)
-├── shared-templates.js       # Backward compatibility layer
+├── shared-templates-new.js   # Backward compatibility layer
+├── typescript-templates-new.js # TS backward compatibility layer
 └── [other generator files]   # Main generator files (to be moved)
 ```
 
@@ -45,14 +54,29 @@ Contains JavaScript code templates:
 - **serviceTemplate.js**: Business logic layer templates
 - **modelTemplate.js**: Database access layer templates
 
-## Benefits of New Structure
+### `src/templates/typescript/`
+Contains TypeScript code templates:
+- **configTemplate.js**: tsconfig.json generation
+- **typesTemplate.js**: TypeScript type definitions
+- **serverTemplate.js**: Express server with TS types
+- **databaseTemplate.js**: DB configuration (MongoDB/MySQL)
+- **routesTemplate.js**: Express routes with types
+- **controllerTemplate.js**: HTTP layer with Request/Response types
+- **serviceTemplate.js**: Business logic layer with types
+- **modelTemplate.js**: Database access layer with types
+wo compatibility layers maintain backward compatibility:
+- **shared-templates-new.js**: Re-exports from src/validators, src/utils, src/templates/javascript
+- **typescript-templates-new.js**: Re-exports from src/templates/typescript
 
-1. **Better Organization**: Clear separation of concerns
-2. **Easier Maintenance**: Each file has a single responsibility
-3. **Improved Testability**: Isolated functions are easier to test
-4. **Scalability**: Easy to add new templates and utilities
-5. **Cleaner Imports**: Centralized exports via index files
+These allow gradual migration of existing generator files.
 
+## Next Steps
+
+1. Move main generator files to `src/generators/`
+2. Update all imports in generator files to use new structure
+3. Create CLI wrapper files in `bin/`
+4. Test all functionality with new structure
+5. Remove old template files once migration complete
 ## Backward Compatibility
 
 The `shared-templates.js` file re-exports from the new structure to maintain backward compatibility with existing code.
