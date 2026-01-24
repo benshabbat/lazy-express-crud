@@ -29,6 +29,7 @@ sdsa/
 test-auth.js
 test-*.js
 __tests__/
+tests/
 
 # Ignore git files
 .git/
