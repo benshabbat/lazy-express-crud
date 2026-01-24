@@ -21,6 +21,7 @@ import {
     hasCrudStructure,
     writeFiles,
     updateServerWithRoute,
+    updateTypesWithResource,
     fileExists
 } from './src/utils/index.js';
 import {
@@ -149,6 +150,17 @@ const updated = updateServerWithRoute(serverPath, resourceName, ext);
 
 if (updated) {
     console.log(`✅ Updated server.${ext} with ${resourceName} routes`);
+}
+
+// Update types/index.ts for TypeScript projects
+if (isTypeScript) {
+    const typesPath = path.join(srcDir, 'types', 'index.ts');
+    if (fs.existsSync(typesPath)) {
+        const typesUpdated = updateTypesWithResource(typesPath, resourceName, dbChoice);
+        if (typesUpdated) {
+            console.log(`✅ Updated types/index.ts with ${resourceName} types`);
+        }
+    }
 }
 
 console.log(`\n✨ CRUD resource "${resourceName}" created successfully!\n`);
