@@ -16,27 +16,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `src/templates/shared/index.js` - Central export point for all shared helpers
 
 ### Changed
-- ♻️ **Template Deduplication** - Eliminated ~500+ lines of duplicate code across controller templates
-  - `src/templates/javascript/controllerTemplate.js` - Reduced from 118 to 21 lines (-82%)
-  - `src/templates/typescript/controllerTemplate.js` - Reduced from 110 to 18 lines (-84%)
-  - `src/templates/addResource/controllerTemplates.js` - Reduced from 300 to 26 lines (-91%)
-  - All controller templates now use `generateAllControllerMethods()` shared helper
+- ♻️ **Template Deduplication** - Eliminated ~650+ lines of duplicate code across templates
+  - **Controller Templates:**
+    - `src/templates/javascript/controllerTemplate.js` - Reduced from 118 to 21 lines (-82%)
+    - `src/templates/typescript/controllerTemplate.js` - Reduced from 110 to 18 lines (-84%)
+    - `src/templates/addResource/controllerTemplates.js` - Reduced from 300 to 26 lines (-91%)
+  - **Auth Templates:**
+    - `src/templates/auth/authControllerTemplate.js` - Reduced from 220 to 47 lines (-79%)
+    - `src/templates/auth/authMiddlewareTemplate.js` - Reduced from 106 to 29 lines (-73%)
+  - All templates now use shared helper functions
   - Consistent error handling patterns across all templates
-  - Automatic status code detection (400 for validation, 404 for not found, 500 for server errors)
+  - Automatic status code detection (400 for validation, 404 for not found, 401 for auth, 500 for server errors)
 
 ### Improved
-- 🎯 **Maintainability** - Single source of truth for controller patterns
+- 🎯 **Maintainability** - Single source of truth for all patterns
   - Bug fixes apply to all templates automatically
   - New features can be added in one place
   - Easier to test and validate template logic
+  - Reduced cognitive load when working with templates
 - 🔧 **Consistency** - All generated code follows identical patterns
   - Same error handling across JavaScript and TypeScript
   - Same validation approach for all databases
   - Uniform API response format
+  - Consistent JWT and auth implementation
 - 📖 **Code Quality** - Cleaner template files, better separation of concerns
   - Template files focus on structure, helpers handle implementation
   - Reduced complexity in template generation
   - Better code reusability
+  - DRY principle applied throughout codebase
 
 ## [1.9.1] - 2026-01-24
 
