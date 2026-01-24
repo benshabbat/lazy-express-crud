@@ -3,16 +3,20 @@
 
 /**
  * Generate Express server template
+ * @param {string} resourceName - Resource name (e.g., 'Product', 'User')
  * @param {string} dbChoice - Database choice: 'mongodb', 'mysql', or 'memory'
  * @returns {string} Express server template code
  */
-export function getServerTemplate(dbChoice) {
+export function getServerTemplate(resourceName, dbChoice) {
+    const lowerResource = resourceName.toLowerCase();
+    const pluralResource = lowerResource + 's';
+    
     return `import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import itemRoutes from './routes/itemRoutes.js';
+import ${lowerResource}Routes from './routes/${lowerResource}Routes.js';
 ${dbChoice === 'mongodb' ? "import connectDB from './config/database.js';\n" : ''}${dbChoice === 'mysql' ? "import db from './config/database.js';\n" : ''}
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -80,16 +84,16 @@ app.get('/', (req, res) => {
         message: 'Welcome to Express CRUD API',
         database: '${dbChoice === 'mongodb' ? 'MongoDB' : dbChoice === 'mysql' ? 'MySQL' : 'In-Memory'}',
         endpoints: {
-            'GET /api/items': 'Get all items',
-            'GET /api/items/:id': 'Get item by id',
-            'POST /api/items': 'Create new item',
-            'PUT /api/items/:id': 'Update item',
-            'DELETE /api/items/:id': 'Delete item'
+            'GET /api/${pluralResource}': 'Get all ${pluralResource}',
+            'GET /api/${pluralResource}/:id': 'Get ${lowerResource} by id',
+            'POST /api/${pluralResource}': 'Create new ${lowerResource}',
+            'PUT /api/${pluralResource}/:id': 'Update ${lowerResource}',
+            'DELETE /api/${pluralResource}/:id': 'Delete ${lowerResource}'
         }
     });
 });
 
-app.use('/api/items', itemRoutes);
+app.use('/api/${pluralResource}', ${lowerResource}Routes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -1,39 +1,42 @@
 // TypeScript controller template - HTTP layer
 
-export function getControllerTemplateTS(dbChoice) {
+export function getControllerTemplateTS(resourceName, dbChoice) {
+    const lowerResource = resourceName.toLowerCase();
+    const pluralResource = lowerResource + 's';
+    
     return `import { Request, Response } from 'express';
-import * as itemService from '../services/itemService.js';
+import * as ${lowerResource}Service from '../services/${lowerResource}Service.js';
 import type { ApiResponse } from '../types/index.js';
 
-// GET all items
-export const getAllItems = async (req: Request, res: Response): Promise<void> => {
+// GET all ${pluralResource}
+export const getAll${resourceName}s = async (req: Request, res: Response): Promise<void> => {
     try {
-        const items = await itemService.getAllItems();
+        const ${pluralResource} = await ${lowerResource}Service.getAll${resourceName}s();
         res.json({
             success: true,
-            count: items.length,
-            data: items
+            count: ${pluralResource}.length,
+            data: ${pluralResource}
         } as ApiResponse);
     } catch (error) {
-        console.error('Error fetching items:', error);
+        console.error('Error fetching ${pluralResource}:', error);
         res.status(500).json({
             success: false,
-            error: error instanceof Error ? error.message : 'Failed to fetch items'
+            error: error instanceof Error ? error.message : 'Failed to fetch ${pluralResource}'
         } as ApiResponse);
     }
 };
 
-// GET item by id
-export const getItemById = async (req: Request, res: Response): Promise<void> => {
+// GET ${lowerResource} by id
+export const get${resourceName}ById = async (req: Request, res: Response): Promise<void> => {
     try {
-        const item = await itemService.getItemById(req.params.id);
+        const ${lowerResource} = await ${lowerResource}Service.get${resourceName}ById(req.params.id);
         res.json({
             success: true,
-            data: item
+            data: ${lowerResource}
         } as ApiResponse);
     } catch (error) {
-        console.error('Error fetching item:', error);
-        const message = error instanceof Error ? error.message : 'Failed to fetch item';
+        console.error('Error fetching ${lowerResource}:', error);
+        const message = error instanceof Error ? error.message : 'Failed to fetch ${lowerResource}';
         const statusCode = message.includes('Invalid ID') ? 400 : 
                           message.includes('not found') ? 404 : 500;
         res.status(statusCode).json({
@@ -43,34 +46,34 @@ export const getItemById = async (req: Request, res: Response): Promise<void> =>
     }
 };
 
-// POST create item
-export const createItem = async (req: Request, res: Response): Promise<void> => {
+// POST create ${lowerResource}
+export const create${resourceName} = async (req: Request, res: Response): Promise<void> => {
     try {
-        const newItem = await itemService.createItem(req.body);
+        const new${resourceName} = await ${lowerResource}Service.create${resourceName}(req.body);
         res.status(201).json({
             success: true,
-            data: newItem
+            data: new${resourceName}
         } as ApiResponse);
     } catch (error) {
-        console.error('Error creating item:', error);
+        console.error('Error creating ${lowerResource}:', error);
         res.status(400).json({
             success: false,
-            error: error instanceof Error ? error.message : 'Failed to create item'
+            error: error instanceof Error ? error.message : 'Failed to create ${lowerResource}'
         } as ApiResponse);
     }
 };
 
-// PUT update item
-export const updateItem = async (req: Request, res: Response): Promise<void> => {
+// PUT update ${lowerResource}
+export const update${resourceName} = async (req: Request, res: Response): Promise<void> => {
     try {
-        const updatedItem = await itemService.updateItem(req.params.id, req.body);
+        const updated${resourceName} = await ${lowerResource}Service.update${resourceName}(req.params.id, req.body);
         res.json({
             success: true,
-            data: updatedItem
+            data: updated${resourceName}
         } as ApiResponse);
     } catch (error) {
-        console.error('Error updating item:', error);
-        const message = error instanceof Error ? error.message : 'Failed to update item';
+        console.error('Error updating ${lowerResource}:', error);
+        const message = error instanceof Error ? error.message : 'Failed to update ${lowerResource}';
         const statusCode = message.includes('Invalid ID') ? 400 : 
                           message.includes('not found') ? 404 : 500;
         res.status(statusCode).json({
@@ -80,17 +83,17 @@ export const updateItem = async (req: Request, res: Response): Promise<void> => 
     }
 };
 
-// DELETE item
-export const deleteItem = async (req: Request, res: Response): Promise<void> => {
+// DELETE ${lowerResource}
+export const delete${resourceName} = async (req: Request, res: Response): Promise<void> => {
     try {
-        await itemService.deleteItem(req.params.id);
+        await ${lowerResource}Service.delete${resourceName}(req.params.id);
         res.json({
             success: true,
-            message: 'Item deleted successfully'
+            message: '${resourceName} deleted successfully'
         } as ApiResponse);
     } catch (error) {
-        console.error('Error deleting item:', error);
-        const message = error instanceof Error ? error.message : 'Failed to delete item';
+        console.error('Error deleting ${lowerResource}:', error);
+        const message = error instanceof Error ? error.message : 'Failed to delete ${lowerResource}';
         const statusCode = message.includes('Invalid ID') ? 400 : 
                           message.includes('not found') ? 404 : 500;
         res.status(statusCode).json({

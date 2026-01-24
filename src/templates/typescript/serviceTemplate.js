@@ -1,14 +1,16 @@
 // TypeScript service template - Business logic layer
 
-export function getServiceTemplateTS(dbChoice) {
+export function getServiceTemplateTS(resourceName, dbChoice) {
+    const lowerResource = resourceName.toLowerCase();
+    const pluralResource = lowerResource + 's';
     const isAsync = dbChoice === 'mongodb' || dbChoice === 'mysql';
     
-    return `import Item from '../models/Item.js';
-${dbChoice === 'mongodb' ? "import mongoose from 'mongoose';\n" : ''}import type { ItemInput } from '../types/index.js';
+    return `import ${resourceName} from '../models/${resourceName}.js';
+${dbChoice === 'mongodb' ? "import mongoose from 'mongoose';\n" : ''}import type { ${resourceName}Input } from '../types/index.js';
 
-// Get all items
-export const getAllItems = async () => {
-    return ${isAsync ? 'await ' : ''}Item.${dbChoice === 'mongodb' ? 'find()' : 'getAll()'};
+// Get all ${pluralResource}
+export const getAll${resourceName}s = async () => {
+    return ${isAsync ? 'await ' : ''}${resourceName}.${dbChoice === 'mongodb' ? 'find()' : 'getAll()'};
 };
 
 // Get item by id

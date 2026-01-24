@@ -1,16 +1,19 @@
 // TypeScript model template - Database access layer
 
-export function getModelTemplateTS(dbChoice) {
+export function getModelTemplateTS(resourceName, dbChoice) {
+    const lowerResource = resourceName.toLowerCase();
+    const pluralResource = lowerResource + 's';
+    
     if (dbChoice === 'mongodb') {
         return `import mongoose, { Schema, Document } from 'mongoose';
 
-export interface IItem extends Document {
+export interface I${resourceName} extends Document {
     name: string;
     description?: string;
     price?: number;
 }
 
-const itemSchema = new Schema<IItem>({
+const ${lowerResource}Schema = new Schema<I${resourceName}>({
     name: {
         type: String,
         required: [true, 'Name is required'],
@@ -30,30 +33,30 @@ const itemSchema = new Schema<IItem>({
     timestamps: true
 });
 
-const Item = mongoose.model<IItem>('Item', itemSchema);
+const ${resourceName} = mongoose.model<I${resourceName}>('${resourceName}', ${lowerResource}Schema);
 
-export default Item;
+export default ${resourceName};
 `;
     } else if (dbChoice === 'mysql') {
         return `import db from '../config/database.js';
-import type { Item, ItemInput } from '../types/index.js';
+import type { ${resourceName}, ${resourceName}Input } from '../types/index.js';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 
-class ItemModel {
-    static async getAll(): Promise<Item[]> {
-        const [rows] = await db.query<RowDataPacket[]>('SELECT * FROM items ORDER BY created_at DESC');
-        return rows as Item[];
+class ${resourceName}Model {
+    static async getAll(): Promise<${resourceName}[]> {
+        const [rows] = await db.query<RowDataPacket[]>('SELECT * FROM ${pluralResource} ORDER BY created_at DESC');
+        return rows as ${resourceName}[];
     }
 
-    static async getById(id: string): Promise<Item | undefined> {
-        const [rows] = await db.query<RowDataPacket[]>('SELECT * FROM items WHERE id = ?', [id]);
-        return rows[0] as Item | undefined;
+    static async getById(id: string): Promise<${resourceName} | undefined> {
+        const [rows] = await db.query<RowDataPacket[]>('SELECT * FROM ${pluralResource} WHERE id = ?', [id]);
+        return rows[0] as ${resourceName} | undefined;
     }
 
-    static async create(data: ItemInput): Promise<Item> {
+    static async create(data: ${resourceName}Input): Promise<${resourceName}> {
         const { name, description, price } = data;
         const [result] = await db.query<ResultSetHeader>(
-            'INSERT INTO items (name, description, price) VALUES (?, ?, ?)',
+            'INSERT INTO ${pluralResource} (name, description, price) VALUES (?, ?, ?)',
             [name, description || '', price || 0]
         );
         return {
@@ -64,7 +67,7 @@ class ItemModel {
         };
     }
 
-    static async update(id: string, data: Partial<ItemInput>): Promise<Item | null> {
+    static async update(id: string, data: Partial<${resourceName}Input>): Promise<${resourceName} | null> {
         const { name, description, price } = data;
         const updates: string[] = [];
         const values: any[] = [];
@@ -86,23 +89,23 @@ class ItemModel {
         
         values.push(id);
         const [result] = await db.query<ResultSetHeader>(
-            \`UPDATE items SET \${updates.join(', ')} WHERE id = ?\`,
+            \`UPDATE ${pluralResource} SET \${updates.join(', ')} WHERE id = ?\`,
             values
         );
         
         if (result.affectedRows === 0) return null;
-        return await ItemModel.getById(id) || null;
+        return await ${resourceName}Model.getById(id) || null;
     }
 
     static async delete(id: string): Promise<boolean> {
-        const [result] = await db.query<ResultSetHeader>('DELETE FROM items WHERE id = ?', [id]);
+        const [result] = await db.query<ResultSetHeader>('DELETE FROM ${pluralResource} WHERE id = ?', [id]);
         return result.affectedRows > 0;
     }
 
     // Helper method to initialize the table
     static async initTable(): Promise<void> {
         await db.query(\`
-            CREATE TABLE IF NOT EXISTS items (
+            CREATE TABLE IF NOT EXISTS ${pluralResource} (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 description TEXT,
@@ -114,63 +117,63 @@ class ItemModel {
     }
 }
 
-export default ItemModel;
+export default ${resourceName}Model;
 `;
     } else {
         // In-memory storage
-        return `import type { Item, ItemInput } from '../types/index.js';
+        return `import type { ${resourceName}, ${resourceName}Input } from '../types/index.js';
 
 // In-memory data storage (for demo purposes)
 // In production, use a real database like MongoDB, PostgreSQL, etc.
 
-let items: Item[] = [
-    { id: '1', name: 'Item 1', description: 'Description 1', price: 100 },
-    { id: '2', name: 'Item 2', description: 'Description 2', price: 200 },
-    { id: '3', name: 'Item 3', description: 'Description 3', price: 300 }
+let ${pluralResource}: ${resourceName}[] = [
+    { id: '1', name: '${resourceName} 1', description: 'Description 1', price: 100 },
+    { id: '2', name: '${resourceName} 2', description: 'Description 2', price: 200 },
+    { id: '3', name: '${resourceName} 3', description: 'Description 3', price: 300 }
 ];
 
-class ItemModel {
-    static getAll(): Item[] {
-        return items;
+class ${resourceName}Model {
+    static getAll(): ${resourceName}[] {
+        return ${pluralResource};
     }
 
-    static getById(id: string): Item | undefined {
-        return items.find(item => item.id === id);
+    static getById(id: string): ${resourceName} | undefined {
+        return ${pluralResource}.find(${lowerResource} => ${lowerResource}.id === id);
     }
 
-    static create(data: ItemInput): Item {
-        const newItem: Item = {
+    static create(data: ${resourceName}Input): ${resourceName} {
+        const new${resourceName}: ${resourceName} = {
             id: Date.now().toString(),
             name: data.name,
             description: data.description || '',
             price: data.price || 0
         };
-        items.push(newItem);
-        return newItem;
+        ${pluralResource}.push(new${resourceName});
+        return new${resourceName};
     }
 
-    static update(id: string, data: Partial<ItemInput>): Item | null {
-        const index = items.findIndex(item => item.id === id);
+    static update(id: string, data: Partial<${resourceName}Input>): ${resourceName} | null {
+        const index = ${pluralResource}.findIndex(${lowerResource} => ${lowerResource}.id === id);
         if (index === -1) return null;
 
-        items[index] = {
-            ...items[index],
+        ${pluralResource}[index] = {
+            ...${pluralResource}[index],
             ...data,
-            id: items[index].id // Preserve id
+            id: ${pluralResource}[index].id // Preserve id
         };
-        return items[index];
+        return ${pluralResource}[index];
     }
 
     static delete(id: string): boolean {
-        const index = items.findIndex(item => item.id === id);
+        const index = ${pluralResource}.findIndex(${lowerResource} => ${lowerResource}.id === id);
         if (index === -1) return false;
 
-        items.splice(index, 1);
+        ${pluralResource}.splice(index, 1);
         return true;
     }
 }
 
-export default ItemModel;
+export default ${resourceName}Model;
 `;
     }
 }

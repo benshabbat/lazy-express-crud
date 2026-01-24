@@ -1,12 +1,15 @@
 // TypeScript server.ts template
 
-export function getServerTemplateTS(dbChoice, projectName) {
+export function getServerTemplateTS(resourceName, dbChoice, projectName) {
+    const lowerResource = resourceName.toLowerCase();
+    const pluralResource = lowerResource + 's';
+    
     return `import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import itemRoutes from './routes/itemRoutes.js';
+import ${lowerResource}Routes from './routes/${lowerResource}Routes.js';
 ${dbChoice === 'mongodb' ? "import connectDB from './config/database.js';\n" : ''}${dbChoice === 'mysql' ? "import db from './config/database.js';\n" : ''}
 const app = express();
 const PORT = process.env.PORT || 3000;

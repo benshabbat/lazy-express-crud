@@ -3,34 +3,37 @@
 
 /**
  * Generate JavaScript service template
+ * @param {string} resourceName - Resource name (e.g., 'Product', 'User')
  * @param {string} dbChoice - Database choice (mongodb, mysql, memory)
  * @returns {string} Service template code
  */
-export function getServiceTemplate(dbChoice) {
+export function getServiceTemplate(resourceName, dbChoice) {
     const isAsync = dbChoice === 'mongodb' || dbChoice === 'mysql';
+    const lowerResource = resourceName.toLowerCase();
+    const pluralResource = lowerResource + 's';
     
-    return `import Item from '../models/Item.js';
+    return `import ${resourceName} from '../models/${resourceName}.js';
 ${dbChoice === 'mongodb' ? "import mongoose from 'mongoose';\n" : ''}
-// Get all items
-export const getAllItems = async () => {
-    return ${isAsync ? 'await ' : ''}Item.${dbChoice === 'mongodb' ? 'find()' : 'getAll()'};
+// Get all ${pluralResource}
+export const getAll${resourceName}s = async () => {
+    return ${isAsync ? 'await ' : ''}${resourceName}.${dbChoice === 'mongodb' ? 'find()' : 'getAll()'};
 };
 
-// Get item by id
-export const getItemById = async (id) => {
+// Get ${lowerResource} by id
+export const get${resourceName}ById = async (id) => {
     ${dbChoice === 'mongodb' ? `// Validate MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
         throw new Error('Invalid ID format');
     }` : ''}
-    const item = ${isAsync ? 'await ' : ''}Item.${dbChoice === 'mongodb' ? 'findById(id)' : 'getById(id)'};
-    if (!item) {
-        throw new Error('Item not found');
+    const ${lowerResource} = ${isAsync ? 'await ' : ''}${resourceName}.${dbChoice === 'mongodb' ? 'findById(id)' : 'getById(id)'};
+    if (!${lowerResource}) {
+        throw new Error('${resourceName} not found');
     }
-    return item;
+    return ${lowerResource};
 };
 
-// Create new item
-export const createItem = async (data) => {
+// Create new ${lowerResource}
+export const create${resourceName} = async (data) => {
     const { name, description, price } = data;
     
     // Validation
@@ -47,11 +50,11 @@ export const createItem = async (data) => {
         throw new Error('Description must be less than 2000 characters');
     }
 
-    return ${isAsync ? 'await ' : ''}Item.create({ name, description, price });
+    return ${isAsync ? 'await ' : ''}${resourceName}.create({ name, description, price });
 };
 
-// Update item
-export const updateItem = async (id, data) => {
+// Update ${lowerResource}
+export const update${resourceName} = async (id, data) => {
     ${dbChoice === 'mongodb' ? `// Validate MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
         throw new Error('Invalid ID format');
@@ -71,33 +74,33 @@ export const updateItem = async (id, data) => {
     }
 
     ${dbChoice === 'mongodb' ? 
-        `const updatedItem = await Item.findByIdAndUpdate(
+        `const updated${resourceName} = await ${resourceName}.findByIdAndUpdate(
         id,
         { name, description, price },
         { new: true, runValidators: true }
     );` :
-        `const updatedItem = ${isAsync ? 'await ' : ''}Item.update(id, { name, description, price });`
+        `const updated${resourceName} = ${isAsync ? 'await ' : ''}${resourceName}.update(id, { name, description, price });`
     }
     
-    if (!updatedItem) {
-        throw new Error('Item not found');
+    if (!updated${resourceName}) {
+        throw new Error('${resourceName} not found');
     }
-    return updatedItem;
+    return updated${resourceName};
 };
 
-// Delete item
-export const deleteItem = async (id) => {
+// Delete ${lowerResource}
+export const delete${resourceName} = async (id) => {
     ${dbChoice === 'mongodb' ? `// Validate MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
         throw new Error('Invalid ID format');
     }` : ''}
     ${dbChoice === 'mongodb' ? 
-        `const deleted = await Item.findByIdAndDelete(id);` : 
-        `const deleted = ${isAsync ? 'await ' : ''}Item.delete(id);`
+        `const deleted = await ${resourceName}.findByIdAndDelete(id);` : 
+        `const deleted = ${isAsync ? 'await ' : ''}${resourceName}.delete(id);`
     }
     
     if (!deleted) {
-        throw new Error('Item not found');
+        throw new Error('${resourceName} not found');
     }
     return deleted;
 };
