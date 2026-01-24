@@ -85,7 +85,7 @@ try {
         
         // Verify it's actually a file and within routes directory
         const filePath = path.join(routesDir, file);
-        if (!isPathInProject(filePath)) {
+        if (!isPathInProject(filePath, currentDir)) {
             return false;
         }
         
@@ -281,7 +281,7 @@ const collection = {
 const outputPath = path.join(currentDir, 'postman-collection.json');
 
 // Security: Verify output path is within project
-if (!isPathInProject(outputPath)) {
+if (!isPathInProject(outputPath, currentDir)) {
     console.error('❌ Error: Invalid output path');
     process.exit(1);
 }
