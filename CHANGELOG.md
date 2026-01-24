@@ -9,11 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - 🎨 **Shared Template Helpers** - Created centralized helper library for template generation
-  - `src/templates/shared/validationHelpers.js` - Reusable validation functions (string, email, password, number, boolean)
-  - `src/templates/shared/controllerHelpers.js` - Controller generation helpers with error handling patterns
-  - `src/templates/shared/databaseHelpers.js` - Database-specific utilities (MongoDB, MySQL, Memory)
-  - `src/templates/shared/authHelpers.js` - JWT token, password hashing, and auth validation helpers
-  - `src/templates/shared/index.js` - Central export point for all shared helpers
+  - `src/templates/shared/validationHelpers.js` (270 lines) - Reusable validation functions (string, email, password, number, boolean)
+  - `src/templates/shared/controllerHelpers.js` (290 lines) - Controller generation helpers with error handling patterns
+  - `src/templates/shared/serviceHelpers.js` (200 lines) - Service method generation with validation
+  - `src/templates/shared/modelHelpers.js` (273 lines) - Model generation for MongoDB, MySQL, and Memory
+  - `src/templates/shared/databaseHelpers.js` (200 lines) - Database-specific utilities (MongoDB, MySQL, Memory)
+  - `src/templates/shared/authHelpers.js` (300 lines) - JWT token, password hashing, and auth validation helpers
+  - `src/templates/shared/index.js` (50 lines) - Central export point for all shared helpers
 - ✨ **Auto-update TypeScript types** - Automatically generate and insert type definitions when adding new resources
   - `updateTypesWithResource()` function in `fileUtils.js`
   - Generates both main interface and Input interface for new resources
@@ -21,17 +23,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Types are inserted before ApiResponse interface in `types/index.ts`
 
 ### Changed
-- ♻️ **Template Deduplication** - Eliminated ~650+ lines of duplicate code across templates
-  - **Controller Templates:**
+- ♻️ **Template Deduplication** - Eliminated ~1,700+ lines of duplicate code across all templates
+  - **Controller Templates (Phase 1):**
     - `src/templates/javascript/controllerTemplate.js` - Reduced from 118 to 21 lines (-82%)
     - `src/templates/typescript/controllerTemplate.js` - Reduced from 110 to 18 lines (-84%)
     - `src/templates/addResource/controllerTemplates.js` - Reduced from 300 to 26 lines (-91%)
-  - **Auth Templates:**
+  - **Auth Templates (Phase 1):**
     - `src/templates/auth/authControllerTemplate.js` - Reduced from 220 to 47 lines (-79%)
     - `src/templates/auth/authMiddlewareTemplate.js` - Reduced from 106 to 29 lines (-73%)
+  - **Service Templates (Phase 2):**
+    - `src/templates/javascript/serviceTemplate.js` - Reduced from 108 to 15 lines (-86%)
+    - `src/templates/typescript/serviceTemplate.js` - Reduced from 110 to 13 lines (-88%)
+    - `src/templates/addResource/serviceTemplates.js` - Reduced from 232 to 20 lines (-91%)
+  - **Model Templates (Phase 2):**
+    - `src/templates/javascript/modelTemplate.js` - Reduced from 155 to 14 lines (-91%)
+    - `src/templates/typescript/modelTemplate.js` - Reduced from 184 to 7 lines (-96%)
+    - `src/templates/addResource/modelTemplates.js` - Reduced from 383 to 22 lines (-94%)
   - All templates now use shared helper functions
   - Consistent error handling patterns across all templates
   - Automatic status code detection (400 for validation, 404 for not found, 401 for auth, 500 for server errors)
+  - Flexible field configuration for models and services
+  - Database-specific code centralized
 
 ### Fixed
 - 🐛 **Missing TypeScript types** - New resources now automatically get proper type definitions in `types/index.ts`
@@ -47,11 +59,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Same validation approach for all databases
   - Uniform API response format
   - Consistent JWT and auth implementation
+  - Identical CRUD patterns across all resources
 - 📖 **Code Quality** - Cleaner template files, better separation of concerns
   - Template files focus on structure, helpers handle implementation
   - Reduced complexity in template generation
   - Better code reusability
   - DRY principle applied throughout codebase
+  - ~1,700 lines of duplicate code eliminated
 
 ## [1.9.1] - 2026-01-24
 
