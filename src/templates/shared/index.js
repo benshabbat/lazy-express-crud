@@ -37,6 +37,14 @@ export {
     generateServiceImports
 } from './serviceHelpers.js';
 
+// Model helpers
+export {
+    generateMongoSchema,
+    generateMySQLModel,
+    generateMemoryModel,
+    generateModel
+} from './modelHelpers.js';
+
 // Database helpers
 export {
     mongoHelpers,
