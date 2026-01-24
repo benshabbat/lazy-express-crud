@@ -16,7 +16,8 @@ import {
     sanitizeError,
     validatePath,
     isPathInProject,
-    validateResourceName
+    validateResourceName,
+    getServiceTemplate as getBaseServiceTemplate
 } from './shared-templates-new.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -233,12 +234,12 @@ function getControllerTemplateTS() {
     const modelFileName = `${resourceName}.${ext}`;
     
     return `import { Request, Response } from 'express';
-import ${resourceName} from '../models/${modelFileName}';
-${dbChoice === 'mongodb' ? "import mongoose from 'mongoose';\n" : ''}
+import * as ${resourceLower}Service from '../services/${modelFileName.replace('.ts', 'Service.ts')}';
+
 // GET all ${resourcePlural}
 export const getAll${resourceName}s = async (req: Request, res: Response): Promise<void> => {
     try {
-        const items = ${isAsync ? 'await ' : ''}${resourceName}.${dbChoice === 'mongodb' ? 'find()' : 'getAll()'};
+        const items = await ${resourceLower}Service.getAll${resourceName}s();
         res.json({
             success: true,
             count: items.length,
@@ -256,28 +257,27 @@ export const getAll${resourceName}s = async (req: Request, res: Response): Promi
 // GET ${resourceLower} by id
 export const get${resourceName}ById = async (req: Request, res: Response): Promise<void> => {
     try {
-        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            res.status(400).json({
-                success: false,
-                error: 'Invalid ID format'
-            });
-            return;
-        }
-        ` : ''}const item = ${isAsync ? 'await ' : ''}${resourceName}.${dbChoice === 'mongodb' ? 'findById(req.params.id)' : 'getById(req.params.id)'};
-        if (!item) {
-            res.status(404).json({
-                success: false,
-                error: '${resourceName} not found'
-            });
-            return;
-        }
+        const item = await ${resourceLower}Service.get${resourceName}ById(req.params.id);
         res.json({
             success: true,
             data: item
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error fetching ${resourceLower}:', error);
+        if (error.message === '${resourceName} not found') {
+            res.status(404).json({
+                success: false,
+                error: error.message
+            });
+            return;
+        }
+        if (error.message === 'Invalid ID format') {
+            res.status(400).json({
+                success: false,
+                error: error.message
+            });
+            return;
+        }
         res.status(500).json({
             success: false,
             error: 'Failed to fetch ${resourceLower}'
@@ -288,48 +288,20 @@ export const get${resourceName}ById = async (req: Request, res: Response): Promi
 // POST create ${resourceLower}
 export const create${resourceName} = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { name, description } = req.body;
-        
-        // Input validation
-        if (!name || typeof name !== 'string') {
-            res.status(400).json({
-                success: false,
-                error: 'Name is required and must be a string'
-            });
-            return;
-        }
-
-        if (name.length > 255) {
-            res.status(400).json({
-                success: false,
-                error: 'Name must be less than 255 characters'
-            });
-            return;
-        }
-
-        if (description && typeof description !== 'string') {
-            res.status(400).json({
-                success: false,
-                error: 'Description must be a string'
-            });
-            return;
-        }
-
-        if (description && description.length > 2000) {
-            res.status(400).json({
-                success: false,
-                error: 'Description must be less than 2000 characters'
-            });
-            return;
-        }
-
-        const newItem = ${isAsync ? 'await ' : ''}${resourceName}.create({ name, description });
+        const newItem = await ${resourceLower}Service.create${resourceName}(req.body);
         res.status(201).json({
             success: true,
             data: newItem
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error creating ${resourceLower}:', error);
+        if (error.message.includes('required') || error.message.includes('must be') || error.message.includes('Invalid')) {
+            res.status(400).json({
+                success: false,
+                error: error.message
+            });
+            return;
+        }
         res.status(500).json({
             success: false,
             error: 'Failed to create ${resourceLower}'
@@ -340,60 +312,27 @@ export const create${resourceName} = async (req: Request, res: Response): Promis
 // PUT update ${resourceLower}
 export const update${resourceName} = async (req: Request, res: Response): Promise<void> => {
     try {
-        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            res.status(400).json({
-                success: false,
-                error: 'Invalid ID format'
-            });
-            return;
-        }
-        ` : ''}const { name, description } = req.body;
-        
-        // Input validation
-        if (name !== undefined) {
-            if (typeof name !== 'string' || name.length > 255) {
-                res.status(400).json({
-                    success: false,
-                    error: 'Name must be a string with max 255 characters'
-                });
-                return;
-            }
-        }
-
-        if (description !== undefined) {
-            if (typeof description !== 'string' || description.length > 2000) {
-                res.status(400).json({
-                    success: false,
-                    error: 'Description must be a string with max 2000 characters'
-                });
-                return;
-            }
-        }
-
-        ${dbChoice === 'mongodb' ? 
-            `const updatedItem = await ${resourceName}.findByIdAndUpdate(
-            req.params.id, 
-            { name, description },
-            { new: true, runValidators: true }
-        );` : 
-            `const updatedItem = ${isAsync ? 'await ' : ''}${resourceName}.update(req.params.id, { name, description });`
-        }
-        
-        if (!updatedItem) {
-            res.status(404).json({
-                success: false,
-                error: '${resourceName} not found'
-            });
-            return;
-        }
-
+        const updatedItem = await ${resourceLower}Service.update${resourceName}(req.params.id, req.body);
         res.json({
             success: true,
             data: updatedItem
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error updating ${resourceLower}:', error);
+        if (error.message === '${resourceName} not found') {
+            res.status(404).json({
+                success: false,
+                error: error.message
+            });
+            return;
+        }
+        if (error.message.includes('must be') || error.message.includes('Invalid')) {
+            res.status(400).json({
+                success: false,
+                error: error.message
+            });
+            return;
+        }
         res.status(500).json({
             success: false,
             error: 'Failed to update ${resourceLower}'
@@ -404,40 +343,139 @@ export const update${resourceName} = async (req: Request, res: Response): Promis
 // DELETE ${resourceLower}
 export const delete${resourceName} = async (req: Request, res: Response): Promise<void> => {
     try {
-        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            res.status(400).json({
-                success: false,
-                error: 'Invalid ID format'
-            });
-            return;
-        }
-        ` : ''}${dbChoice === 'mongodb' ? 
-            `const deleted = await ${resourceName}.findByIdAndDelete(req.params.id);
-        
-        if (!deleted) {` : 
-            `const deleted = ${isAsync ? 'await ' : ''}${resourceName}.delete(req.params.id);
-        
-        if (!deleted) {`
-        }
-            res.status(404).json({
-                success: false,
-                error: '${resourceName} not found'
-            });
-            return;
-        }
-
+        await ${resourceLower}Service.delete${resourceName}(req.params.id);
         res.json({
             success: true,
             message: '${resourceName} deleted successfully'
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error deleting ${resourceLower}:', error);
+        if (error.message === '${resourceName} not found') {
+            res.status(404).json({
+                success: false,
+                error: error.message
+            });
+            return;
+        }
+        if (error.message === 'Invalid ID format') {
+            res.status(400).json({
+                success: false,
+                error: error.message
+            });
+            return;
+        }
         res.status(500).json({
             success: false,
             error: 'Failed to delete ${resourceLower}'
         });
     }
+};
+`;
+}
+
+// TypeScript Service template
+function getServiceTemplateTS() {
+    const resourceLower = resourceName.toLowerCase();
+    const resourcePlural = resourceLower + 's';
+    const isAsync = dbChoice === 'mongodb' || dbChoice === 'mysql';
+    const modelFileName = `${resourceName}.${ext}`;
+    
+    return `import ${resourceName} from '../models/${modelFileName}';
+${dbChoice === 'mongodb' ? "import mongoose from 'mongoose';\n" : ''}
+// Get all ${resourcePlural}
+export const getAll${resourceName}s = async () => {
+    return ${isAsync ? 'await ' : ''}${resourceName}.${dbChoice === 'mongodb' ? 'find()' : 'getAll()'};
+};
+
+// Get ${resourceLower} by id
+export const get${resourceName}ById = async (id: string) => {
+    ${dbChoice === 'mongodb' ? `// Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new Error('Invalid ID format');
+    }` : ''}
+    const item = ${isAsync ? 'await ' : ''}${resourceName}.${dbChoice === 'mongodb' ? 'findById(id)' : 'getById(id)'};
+    if (!item) {
+        throw new Error('${resourceName} not found');
+    }
+    return item;
+};
+
+// Create new ${resourceLower}
+export const create${resourceName} = async (data: any) => {
+    const { name, description } = data;
+    
+    // Validation
+    if (!name || typeof name !== 'string') {
+        throw new Error('Name is required and must be a string');
+    }
+    if (name.length > 255) {
+        throw new Error('Name must be less than 255 characters');
+    }
+    if (description && typeof description !== 'string') {
+        throw new Error('Description must be a string');
+    }
+    if (description && description.length > 2000) {
+        throw new Error('Description must be less than 2000 characters');
+    }
+
+    return ${isAsync ? 'await ' : ''}${resourceName}.create({ name, description });
+};
+
+// Update ${resourceLower}
+export const update${resourceName} = async (id: string, data: any) => {
+    ${dbChoice === 'mongodb' ? `// Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new Error('Invalid ID format');
+    }` : ''}
+    
+    const { name, description } = data;
+    
+    // Validation
+    if (name !== undefined) {
+        if (typeof name !== 'string' || name.length > 255) {
+            throw new Error('Name must be a string with max 255 characters');
+        }
+    }
+    if (description !== undefined) {
+        if (typeof description !== 'string' || description.length > 2000) {
+            throw new Error('Description must be a string with max 2000 characters');
+        }
+    }
+
+    ${dbChoice === 'mongodb' ? 
+        `const updatedItem = await ${resourceName}.findByIdAndUpdate(
+        id, 
+        { name, description },
+        { new: true, runValidators: true }
+    );` : 
+        `const updatedItem = ${isAsync ? 'await ' : ''}${resourceName}.update(id, { name, description });`
+    }
+    
+    if (!updatedItem) {
+        throw new Error('${resourceName} not found');
+    }
+    return updatedItem;
+};
+
+// Delete ${resourceLower}
+export const delete${resourceName} = async (id: string) => {
+    ${dbChoice === 'mongodb' ? `// Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new Error('Invalid ID format');
+    }` : ''}
+    
+    ${dbChoice === 'mongodb' ? 
+        `const deleted = await ${resourceName}.findByIdAndDelete(id);
+    
+    if (!deleted) {` : 
+        `const deleted = ${isAsync ? 'await ' : ''}${resourceName}.delete(id);
+    
+    if (!deleted) {`
+    }
+        throw new Error('${resourceName} not found');
+    }
+    
+    return true;
 };
 `;
 }
@@ -697,14 +735,12 @@ const getControllerTemplate = () => {
         return getControllerTemplateTS();
     }
     
-    const isAsync = dbChoice === 'mongodb' || dbChoice === 'mysql';
-    
-    return `import ${resourceName} from '../models/${modelFileName}';
-${dbChoice === 'mongodb' ? "import mongoose from 'mongoose';\n" : ''}
+    return `import * as ${resourceLower}Service from '../services/${modelFileName.replace('.js', 'Service.js')}';
+
 // GET all ${resourcePlural}
 export const getAll${resourceName}s = async (req, res) => {
     try {
-        const items = ${isAsync ? 'await ' : ''}${resourceName}.${dbChoice === 'mongodb' ? 'find()' : 'getAll()'};
+        const items = await ${resourceLower}Service.getAll${resourceName}s();
         res.json({
             success: true,
             count: items.length,
@@ -722,26 +758,25 @@ export const getAll${resourceName}s = async (req, res) => {
 // GET ${resourceLower} by id
 export const get${resourceName}ById = async (req, res) => {
     try {
-        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid ID format'
-            });
-        }
-        ` : ''}const item = ${isAsync ? 'await ' : ''}${resourceName}.${dbChoice === 'mongodb' ? 'findById(req.params.id)' : 'getById(req.params.id)'};
-        if (!item) {
-            return res.status(404).json({
-                success: false,
-                error: '${resourceName} not found'
-            });
-        }
+        const item = await ${resourceLower}Service.get${resourceName}ById(req.params.id);
         res.json({
             success: true,
             data: item
         });
     } catch (error) {
         console.error('Error fetching ${resourceLower}:', error);
+        if (error.message === '${resourceName} not found') {
+            return res.status(404).json({
+                success: false,
+                error: error.message
+            });
+        }
+        if (error.message === 'Invalid ID format') {
+            return res.status(400).json({
+                success: false,
+                error: error.message
+            });
+        }
         res.status(500).json({
             success: false,
             error: 'Failed to fetch ${resourceLower}'
@@ -752,44 +787,19 @@ export const get${resourceName}ById = async (req, res) => {
 // POST create ${resourceLower}
 export const create${resourceName} = async (req, res) => {
     try {
-        const { name, description } = req.body;
-        
-        // Input validation
-        if (!name || typeof name !== 'string') {
-            return res.status(400).json({
-                success: false,
-                error: 'Name is required and must be a string'
-            });
-        }
-
-        if (name.length > 255) {
-            return res.status(400).json({
-                success: false,
-                error: 'Name must be less than 255 characters'
-            });
-        }
-
-        if (description && typeof description !== 'string') {
-            return res.status(400).json({
-                success: false,
-                error: 'Description must be a string'
-            });
-        }
-
-        if (description && description.length > 2000) {
-            return res.status(400).json({
-                success: false,
-                error: 'Description must be less than 2000 characters'
-            });
-        }
-
-        const newItem = ${isAsync ? 'await ' : ''}${resourceName}.create({ name, description });
+        const newItem = await ${resourceLower}Service.create${resourceName}(req.body);
         res.status(201).json({
             success: true,
             data: newItem
         });
     } catch (error) {
         console.error('Error creating ${resourceLower}:', error);
+        if (error.message.includes('required') || error.message.includes('must be') || error.message.includes('Invalid')) {
+            return res.status(400).json({
+                success: false,
+                error: error.message
+            });
+        }
         res.status(500).json({
             success: false,
             error: 'Failed to create ${resourceLower}'
@@ -800,56 +810,25 @@ export const create${resourceName} = async (req, res) => {
 // PUT update ${resourceLower}
 export const update${resourceName} = async (req, res) => {
     try {
-        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid ID format'
-            });
-        }
-        ` : ''}const { name, description } = req.body;
-        
-        // Input validation
-        if (name !== undefined) {
-            if (typeof name !== 'string' || name.length > 255) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Name must be a string with max 255 characters'
-                });
-            }
-        }
-
-        if (description !== undefined) {
-            if (typeof description !== 'string' || description.length > 2000) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Description must be a string with max 2000 characters'
-                });
-            }
-        }
-
-        ${dbChoice === 'mongodb' ? 
-            `const updatedItem = await ${resourceName}.findByIdAndUpdate(
-            req.params.id, 
-            { name, description },
-            { new: true, runValidators: true }
-        );` : 
-            `const updatedItem = ${isAsync ? 'await ' : ''}${resourceName}.update(req.params.id, { name, description });`
-        }
-        
-        if (!updatedItem) {
-            return res.status(404).json({
-                success: false,
-                error: '${resourceName} not found'
-            });
-        }
-
+        const updatedItem = await ${resourceLower}Service.update${resourceName}(req.params.id, req.body);
         res.json({
             success: true,
             data: updatedItem
         });
     } catch (error) {
         console.error('Error updating ${resourceLower}:', error);
+        if (error.message === '${resourceName} not found') {
+            return res.status(404).json({
+                success: false,
+                error: error.message
+            });
+        }
+        if (error.message.includes('must be') || error.message.includes('Invalid')) {
+            return res.status(400).json({
+                success: false,
+                error: error.message
+            });
+        }
         res.status(500).json({
             success: false,
             error: 'Failed to update ${resourceLower}'
@@ -860,38 +839,138 @@ export const update${resourceName} = async (req, res) => {
 // DELETE ${resourceLower}
 export const delete${resourceName} = async (req, res) => {
     try {
-        ${dbChoice === 'mongodb' ? `// Security: Validate MongoDB ObjectId
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid ID format'
-            });
-        }
-        ` : ''}${dbChoice === 'mongodb' ? 
-            `const deleted = await ${resourceName}.findByIdAndDelete(req.params.id);
-        
-        if (!deleted) {` : 
-            `const deleted = ${isAsync ? 'await ' : ''}${resourceName}.delete(req.params.id);
-        
-        if (!deleted) {`
-        }
-            return res.status(404).json({
-                success: false,
-                error: '${resourceName} not found'
-            });
-        }
-
+        await ${resourceLower}Service.delete${resourceName}(req.params.id);
         res.json({
             success: true,
             message: '${resourceName} deleted successfully'
         });
     } catch (error) {
         console.error('Error deleting ${resourceLower}:', error);
+        if (error.message === '${resourceName} not found') {
+            return res.status(404).json({
+                success: false,
+                error: error.message
+            });
+        }
+        if (error.message === 'Invalid ID format') {
+            return res.status(400).json({
+                success: false,
+                error: error.message
+            });
+        }
         res.status(500).json({
             success: false,
             error: 'Failed to delete ${resourceLower}'
         });
     }
+};
+`;
+};
+
+// Service template (business logic layer)
+const getServiceTemplate = () => {
+    if (isTypeScript) {
+        return getServiceTemplateTS();
+    }
+    
+    const isAsync = dbChoice === 'mongodb' || dbChoice === 'mysql';
+    
+    return `import ${resourceName} from '../models/${modelFileName}';
+${dbChoice === 'mongodb' ? "import mongoose from 'mongoose';\n" : ''}
+// Get all ${resourcePlural}
+export const getAll${resourceName}s = async () => {
+    return ${isAsync ? 'await ' : ''}${resourceName}.${dbChoice === 'mongodb' ? 'find()' : 'getAll()'};
+};
+
+// Get ${resourceLower} by id
+export const get${resourceName}ById = async (id) => {
+    ${dbChoice === 'mongodb' ? `// Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new Error('Invalid ID format');
+    }` : ''}
+    const item = ${isAsync ? 'await ' : ''}${resourceName}.${dbChoice === 'mongodb' ? 'findById(id)' : 'getById(id)'};
+    if (!item) {
+        throw new Error('${resourceName} not found');
+    }
+    return item;
+};
+
+// Create new ${resourceLower}
+export const create${resourceName} = async (data) => {
+    const { name, description } = data;
+    
+    // Validation
+    if (!name || typeof name !== 'string') {
+        throw new Error('Name is required and must be a string');
+    }
+    if (name.length > 255) {
+        throw new Error('Name must be less than 255 characters');
+    }
+    if (description && typeof description !== 'string') {
+        throw new Error('Description must be a string');
+    }
+    if (description && description.length > 2000) {
+        throw new Error('Description must be less than 2000 characters');
+    }
+
+    return ${isAsync ? 'await ' : ''}${resourceName}.create({ name, description });
+};
+
+// Update ${resourceLower}
+export const update${resourceName} = async (id, data) => {
+    ${dbChoice === 'mongodb' ? `// Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new Error('Invalid ID format');
+    }` : ''}
+    
+    const { name, description } = data;
+    
+    // Validation
+    if (name !== undefined) {
+        if (typeof name !== 'string' || name.length > 255) {
+            throw new Error('Name must be a string with max 255 characters');
+        }
+    }
+    if (description !== undefined) {
+        if (typeof description !== 'string' || description.length > 2000) {
+            throw new Error('Description must be a string with max 2000 characters');
+        }
+    }
+
+    ${dbChoice === 'mongodb' ? 
+        `const updatedItem = await ${resourceName}.findByIdAndUpdate(
+        id, 
+        { name, description },
+        { new: true, runValidators: true }
+    );` : 
+        `const updatedItem = ${isAsync ? 'await ' : ''}${resourceName}.update(id, { name, description });`
+    }
+    
+    if (!updatedItem) {
+        throw new Error('${resourceName} not found');
+    }
+    return updatedItem;
+};
+
+// Delete ${resourceLower}
+export const delete${resourceName} = async (id) => {
+    ${dbChoice === 'mongodb' ? `// Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new Error('Invalid ID format');
+    }` : ''}
+    
+    ${dbChoice === 'mongodb' ? 
+        `const deleted = await ${resourceName}.findByIdAndDelete(id);
+    
+    if (!deleted) {` : 
+        `const deleted = ${isAsync ? 'await ' : ''}${resourceName}.delete(id);
+    
+    if (!deleted) {`
+    }
+        throw new Error('${resourceName} not found');
+    }
+    
+    return true;
 };
 `;
 };
@@ -926,6 +1005,11 @@ const files = [
         path: path.join(srcDir, 'models', modelFileName), 
         content: getModelTemplate(),
         type: 'Model'
+    },
+    { 
+        path: path.join(srcDir, 'services', modelFileName.replace('.js', 'Service.js').replace('.ts', 'Service.ts')), 
+        content: getServiceTemplate(),
+        type: 'Service'
     },
     { 
         path: path.join(srcDir, 'controllers', controllerFileName), 
