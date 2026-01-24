@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `src/utils/promptUtils.js` - Unified readline interface wrappers for user interaction (112 lines)
   - `src/utils/fileUtils.js` - File operations with security validation (188 lines)
   - Centralized exports via `src/utils/index.js` for easy imports
+- 📁 **Middleware Organization** - Separated middleware into dedicated template files
+  - `src/templates/middlewares/securityMiddleware.js` - Security headers, HTTPS redirect, rate limiting
+  - `src/templates/middlewares/corsMiddleware.js` - CORS configuration with whitelist
+  - `src/templates/middlewares/errorHandler.js` - Global error handler and 404 handler
+  - All generated projects now have organized middleware structure
 
 ### Changed
 - ♻️ **Major Refactoring** - Applied utils layer across all generator files
@@ -22,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `generateExpressCrud.js` - Replaced custom readline code with `promptLanguage()` and `promptDatabase()`
   - `generateAuth.js` - Removed 3 duplicate helper functions, using utils instead
   - **Total Impact**: Removed 258 lines, added 76 lines = **Net -182 lines of duplicate code**
+- 🔄 **Server Template** - Updated to import middlewares from separate files instead of inline definitions
+  - Cleaner server.js/server.ts files
+  - Better code organization and maintainability
+  - Easier to customize individual middlewares
 
 ### Removed
 - 🗑️ **Backward Compatibility Layers** - Cleaned up obsolete files
@@ -33,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🧪 **Maintainability** - Changes to project detection or prompts only need one place update
 - 📦 **Code Reusability** - Functions like `updateServerWithRoute()` work across multiple generators
 - 📖 **Developer Experience** - Cleaner imports, better error handling, less code duplication
+- 🎯 **Architecture** - Generated projects now have better separation of concerns with dedicated middleware files
 
 ## [1.8.0] - 2026-01-18
 
