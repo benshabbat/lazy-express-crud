@@ -7,7 +7,8 @@ import { dirname } from 'path';
 import {
     validateProjectName,
     promptLanguage,
-    promptDatabase
+    promptDatabase,
+    sanitizeError
 } from './src/utils/index.js';
 import {
     getTsConfigTemplate,
@@ -18,7 +19,7 @@ import {
     getControllerTemplateTS,
     getServiceTemplateTS,
     getModelTemplateTS
-} from './typescript-templates-new.js';
+} from './src/templates/typescript/index.js';
 import {
     getJestConfigJS,
     getJestConfigTS,
@@ -38,12 +39,10 @@ import {
     getReadmeTemplate
 } from './src/templates/project/index.js';
 import {
-    sanitizeError,
-    validateProjectName,
     getControllerTemplate,
     getServiceTemplate,
     getModelTemplate
-} from './shared-templates-new.js';
+} from './src/templates/javascript/index.js';
 import {
     getPackageJsonTemplate,
     getNextStepsText,

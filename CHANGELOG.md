@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-01-24
+
+### Added
+- 🛠️ **Utils Layer** - Comprehensive utilities for all generator files
+  - `src/utils/projectUtils.js` - Project detection, configuration, and structure validation (147 lines)
+  - `src/utils/promptUtils.js` - Unified readline interface wrappers for user interaction (112 lines)
+  - `src/utils/fileUtils.js` - File operations with security validation (188 lines)
+  - Centralized exports via `src/utils/index.js` for easy imports
+
+### Changed
+- ♻️ **Major Refactoring** - Applied utils layer across all generator files
+  - `addCrudResource-single.js` - Reduced from 248 to 169 lines (-79 lines)
+  - `addDocker.js` - Replaced package.json reading with `readPackageJson()` and DB detection with `detectDatabase()`
+  - `generatePostmanCollection.js` - Using `readPackageJson()` and `validateProjectName()`
+  - `generateExpressCrud.js` - Replaced custom readline code with `promptLanguage()` and `promptDatabase()`
+  - `generateAuth.js` - Removed 3 duplicate helper functions, using utils instead
+  - **Total Impact**: Removed 258 lines, added 76 lines = **Net -182 lines of duplicate code**
+
+### Removed
+- 🗑️ **Backward Compatibility Layers** - Cleaned up obsolete files
+  - Removed `shared-templates-new.js` (no longer needed, direct imports from src/)
+  - Removed `typescript-templates-new.js` (no longer needed, direct imports from src/)
+
+### Improved
+- 🔒 **Consistent Security** - All utils use centralized validation (path, file size, project boundaries)
+- 🧪 **Maintainability** - Changes to project detection or prompts only need one place update
+- 📦 **Code Reusability** - Functions like `updateServerWithRoute()` work across multiple generators
+- 📖 **Developer Experience** - Cleaner imports, better error handling, less code duplication
+
 ## [1.8.0] - 2026-01-18
 
 ### Added
