@@ -78,7 +78,8 @@
   },
   "homepage": "https://github.com/benshabbat/lazy-express-crud#readme",
   "files": [
-    "typescript-templates.js",
+    "typescript-templates-new.js",
+    "shared-templates-new.js",
     "test-templates.js",
     "generateExpressCrud.js",
     "addCrudResource.js",
@@ -86,6 +87,7 @@
     "generatePostmanCollection.js",
     "generateAuth.js",
     "addDocker.js",
+    "src/",
     "README.md",
     "CHANGELOG.md",
     "SECURITY-AUDIT.md",

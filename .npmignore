@@ -19,6 +19,10 @@ express-crud-app/
 auth-test/
 test-secure/
 test-mongo/
+test-mongo-crud/
+test-ts-mongo-crud/
+test-mysql-crud/
+test-ts-mysql-crud/
 sdsa/
 
 # Ignore test files

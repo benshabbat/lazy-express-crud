@@ -208,7 +208,7 @@ if (fs.existsSync(packageJsonPath)) {
 // Check 7: Generated Code Security
 console.log('\n7️⃣  Checking Security of Generated Code...');
 
-const tsTemplatesPath = path.join(__dirname, 'typescript-templates.js');
+const tsTemplatesPath = path.join(__dirname, 'typescript-templates-new.js');
 if (fs.existsSync(tsTemplatesPath)) {
     const content = fs.readFileSync(tsTemplatesPath, 'utf8');
     

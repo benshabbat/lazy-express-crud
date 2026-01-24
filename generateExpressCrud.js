@@ -209,11 +209,11 @@ const packageJson = {
 // Write all files
 const files = [
     { path: path.join(projectPath, 'package.json'), content: JSON.stringify(packageJson, null, 2) },
-    { path: path.join(projectPath, `src/server.${ext}`), content: isTypeScript ? getServerTemplateTS(dbChoice, projectName) : getServerTemplate(dbChoice) },
-    { path: path.join(projectPath, `src/routes/itemRoutes.${ext}`), content: isTypeScript ? getRoutesTemplateTS() : getRoutesTemplate() },
-    { path: path.join(projectPath, `src/controllers/itemController.${ext}`), content: isTypeScript ? getControllerTemplateTS(dbChoice) : getControllerTemplate(dbChoice) },
-    { path: path.join(projectPath, `src/services/itemService.${ext}`), content: isTypeScript ? getServiceTemplateTS(dbChoice) : getServiceTemplate(dbChoice) },
-    { path: path.join(projectPath, `src/models/Item.${ext}`), content: isTypeScript ? getModelTemplateTS(dbChoice) : getModelTemplate(dbChoice) },
+    { path: path.join(projectPath, `src/server.${ext}`), content: isTypeScript ? getServerTemplateTS('Item', dbChoice, projectName) : getServerTemplate('Item', dbChoice) },
+    { path: path.join(projectPath, `src/routes/itemRoutes.${ext}`), content: isTypeScript ? getRoutesTemplateTS('Item') : getRoutesTemplate('Item') },
+    { path: path.join(projectPath, `src/controllers/itemController.${ext}`), content: isTypeScript ? getControllerTemplateTS('Item', dbChoice) : getControllerTemplate('Item', dbChoice) },
+    { path: path.join(projectPath, `src/services/itemService.${ext}`), content: isTypeScript ? getServiceTemplateTS('Item', dbChoice) : getServiceTemplate('Item', dbChoice) },
+    { path: path.join(projectPath, `src/models/Item.${ext}`), content: isTypeScript ? getModelTemplateTS('Item', dbChoice) : getModelTemplate('Item', dbChoice) },
     { path: path.join(projectPath, '.env'), content: getEnvTemplate(dbChoice, projectName) },
     { path: path.join(projectPath, '.gitignore'), content: isTypeScript ? getGitignoreTemplate() + 'dist/\n' : getGitignoreTemplate() },
     { path: path.join(projectPath, 'README.md'), content: getReadmeTemplate(dbChoice, projectName) }
