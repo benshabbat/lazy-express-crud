@@ -17,14 +17,8 @@ ${dbChoice === 'mongodb' ? "import connectDB from './config/database.js';\n" : '
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Environment validation
-const requiredEnvVars = ${dbChoice === 'mongodb' ? "['MONGODB_URI']" : dbChoice === 'mysql' ? "['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME']" : '[]'};
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
-if (missingEnvVars.length > 0) {
-    console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
-    console.error('Please check your .env file');
-    process.exit(1);
-}
+// Environment validation is done in database.js for MongoDB/MySQL
+// For in-memory storage, no validation needed
 ${dbChoice === 'mongodb' ? '\n// Connect to MongoDB\nconnectDB();\n' : ''}${dbChoice === 'mysql' ? '\n// MySQL connection pool is ready\n// Import db in models: import db from \'../config/database.js\';\n' : ''}
 // Security Middleware
 app.use(helmet()); // Security headers
