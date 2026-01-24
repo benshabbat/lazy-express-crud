@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `src/templates/shared/databaseHelpers.js` - Database-specific utilities (MongoDB, MySQL, Memory)
   - `src/templates/shared/authHelpers.js` - JWT token, password hashing, and auth validation helpers
   - `src/templates/shared/index.js` - Central export point for all shared helpers
+- ✨ **Auto-update TypeScript types** - Automatically generate and insert type definitions when adding new resources
+  - `updateTypesWithResource()` function in `fileUtils.js`
+  - Generates both main interface and Input interface for new resources
+  - Properly handles MongoDB vs MySQL field naming conventions
+  - Types are inserted before ApiResponse interface in `types/index.ts`
 
 ### Changed
 - ♻️ **Template Deduplication** - Eliminated ~650+ lines of duplicate code across templates
@@ -27,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All templates now use shared helper functions
   - Consistent error handling patterns across all templates
   - Automatic status code detection (400 for validation, 404 for not found, 401 for auth, 500 for server errors)
+
+### Fixed
+- 🐛 **Missing TypeScript types** - New resources now automatically get proper type definitions in `types/index.ts`
 
 ### Improved
 - 🎯 **Maintainability** - Single source of truth for all patterns
