@@ -21,6 +21,7 @@ import {
     hasCrudStructure,
     writeFiles,
     updateServerWithRoute,
+    generateResourceTypes,
     fileExists
 } from './src/utils/index.js';
 import {
@@ -79,6 +80,7 @@ const resourceLower = resourceName.toLowerCase();
 const resourcePlural = resourceLower + 's';
 const routeFileName = `${resourceLower}Routes.${ext}`;
 const controllerFileName = `${resourceLower}Controller.${ext}`;
+const serviceFileName = `${resourceLower}Service.${ext}`;
 const modelFileName = `${resourceName}.${ext}`;
 
 console.log(`\n🚀 Adding new CRUD resource: ${resourceName}\n`);
@@ -98,7 +100,7 @@ const files = [
         type: 'Model'
     },
     { 
-        path: path.join(srcDir, 'services', modelFileName.replace('.js', 'Service.js').replace('.ts', 'Service.ts')), 
+        path: path.join(srcDir, 'services', serviceFileName), 
         content: getServiceTemplate(resourceName, dbChoice, modelFileName, isTypeScript),
         type: 'Service'
     },
@@ -136,6 +138,20 @@ files.push({
     content: testContent,
     type: 'Test'
 });
+
+// Create types file for TypeScript projects
+if (isTypeScript) {
+    const typesDir = path.join(srcDir, 'types');
+    const typeFileName = `${resourceName}.types.ts`;
+    const typeFilePath = path.join(typesDir, typeFileName);
+    
+    const typeContent = generateResourceTypes(resourceName, dbChoice);
+    files.push({
+        path: typeFilePath,
+        content: typeContent,
+        type: 'Types'
+    });
+}
 
 // Write all files
 writeFiles(files, false);

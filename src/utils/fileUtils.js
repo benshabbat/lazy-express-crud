@@ -207,6 +207,105 @@ export function updateServerWithRoute(serverPath, resourceName, ext = 'js') {
 }
 
 /**
+ * Generate TypeScript types for a resource in a separate file
+ * @param {string} resourceName - Name of the resource
+ * @param {string} dbChoice - Database choice (mongodb, mysql, memory)
+ * @returns {string} - TypeScript types content
+ */
+export function generateResourceTypes(resourceName, dbChoice) {
+    const idField = dbChoice === 'mongodb' ? '_id' : 'id';
+    const idType = dbChoice === 'mongodb' ? '?: string | undefined' : ': string';
+    const timestampFields = dbChoice === 'mysql' 
+        ? '    created_at?: Date;\n    updated_at?: Date;'
+        : '    createdAt?: Date;\n    updatedAt?: Date;';
+    
+    return `// TypeScript types for ${resourceName} resource
+
+export interface ${resourceName} {
+    ${idField}${idType};
+    name: string;
+    description?: string;
+    price?: number;
+    ${timestampFields}
+}
+
+export interface ${resourceName}Input {
+    name: string;
+    description?: string;
+    price?: number;
+}
+`;
+}
+
+/**
+ * Update types.ts file with new resource types (DEPRECATED - use generateResourceTypes instead)
+ * @param {string} typesPath - Path to types/index.ts file
+ * @param {string} resourceName - Name of the resource
+ * @param {string} dbChoice - Database choice (mongodb, mysql, memory)
+ * @returns {boolean} - True if updated successfully
+ */
+export function updateTypesWithResource(typesPath, resourceName, dbChoice) {
+    try {
+        // Security: Validate inputs
+        validatePath(typesPath);
+        if (!resourceName || typeof resourceName !== 'string' || resourceName.length > SECURITY_LIMITS.MAX_RESOURCE_NAME_LENGTH) {
+            throw new Error('Invalid resource name');
+        }
+        
+        let typesContent = readFileSafe(typesPath);
+        
+        if (!typesContent) {
+            return false;
+        }
+        
+        // Check if type already exists
+        const typeInterface = `export interface ${resourceName} {`;
+        if (typesContent.includes(typeInterface)) {
+            return false; // Already exists
+        }
+        
+        // Generate the new types
+        const idField = dbChoice === 'mongodb' ? '_id' : 'id';
+        const idType = dbChoice === 'mongodb' ? '?: string | undefined' : ': string';
+        const timestampFields = dbChoice === 'mysql' 
+            ? '    created_at?: Date;\n    updated_at?: Date;'
+            : '    createdAt?: Date;\n    updatedAt?: Date;';
+        
+        const newTypes = `
+export interface ${resourceName} {
+    ${idField}${idType};
+    name: string;
+    description?: string;
+    price?: number;
+    ${timestampFields}
+}
+
+export interface ${resourceName}Input {
+    name: string;
+    description?: string;
+    price?: number;
+}
+`;
+        
+        // Find the last interface closing brace before ApiResponse
+        const apiResponseIndex = typesContent.indexOf('export interface ApiResponse');
+        if (apiResponseIndex !== -1) {
+            // Add new types before ApiResponse
+            typesContent = typesContent.slice(0, apiResponseIndex) + newTypes + '\n' + typesContent.slice(apiResponseIndex);
+        } else {
+            // If ApiResponse not found, add at the end
+            typesContent += newTypes;
+        }
+        
+        writeFile(typesPath, typesContent);
+        return true;
+    } catch (error) {
+        console.log(`⚠️  Note: Could not automatically update types file: ${error.message}`);
+        return false;
+    }
+}
+
+/**
  * Copy file from source to destination
  * @param {string} srcPath - Source file path
  * @param {string} destPath - Destination file path

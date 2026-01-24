@@ -43,5 +43,7 @@ export {
     readFileSafe,
     fileExists,
     updateServerWithRoute,
+    generateResourceTypes,
+    updateTypesWithResource,
     copyFile
 } from './fileUtils.js';
