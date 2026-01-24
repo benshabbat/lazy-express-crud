@@ -12,7 +12,7 @@ import { dirname } from 'path';
 import {
     getJestConfigJS,
     getTestTemplateMySQLJS,
-} from '../test-templates.js';
+} from './test-templates.js';
 import {
     getDatabaseConfigTemplate,
     getServerTemplate,

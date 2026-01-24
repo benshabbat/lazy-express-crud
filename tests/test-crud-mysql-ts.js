@@ -22,7 +22,7 @@ import {
 import {
     getJestConfigTS,
     getTestTemplateMySQLTS,
-} from '../test-templates.js';
+} from './test-templates.js';
 import {
     getEnvTemplate,
     getGitignoreTemplate,

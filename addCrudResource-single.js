@@ -11,7 +11,7 @@ import {
     getTestTemplateMongoTS,
     getTestTemplateMySQLTS,
     getTestTemplateMemoryTS
-} from './test-templates.js';
+} from './tests/test-templates.js';
 import {
     sanitizeError,
     validatePath,
