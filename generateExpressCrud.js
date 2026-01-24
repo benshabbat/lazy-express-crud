@@ -39,6 +39,14 @@ import {
     getReadmeTemplate
 } from './src/templates/project/index.js';
 import {
+    getSecurityMiddlewareTemplate,
+    getSecurityMiddlewareTemplateTS,
+    getCorsMiddlewareTemplate,
+    getCorsMiddlewareTemplateTS,
+    getErrorHandlerTemplate,
+    getErrorHandlerTemplateTS
+} from './src/templates/middlewares/index.js';
+import {
     getControllerTemplate,
     getServiceTemplate,
     getModelTemplate
@@ -119,6 +127,9 @@ const files = [
     { path: path.join(projectPath, `src/controllers/itemController.${ext}`), content: isTypeScript ? getControllerTemplateTS('Item', dbChoice) : getControllerTemplate('Item', dbChoice) },
     { path: path.join(projectPath, `src/services/itemService.${ext}`), content: isTypeScript ? getServiceTemplateTS('Item', dbChoice) : getServiceTemplate('Item', dbChoice) },
     { path: path.join(projectPath, `src/models/Item.${ext}`), content: isTypeScript ? getModelTemplateTS('Item', dbChoice) : getModelTemplate('Item', dbChoice) },
+    { path: path.join(projectPath, `src/middlewares/security.${ext}`), content: isTypeScript ? getSecurityMiddlewareTemplateTS() : getSecurityMiddlewareTemplate() },
+    { path: path.join(projectPath, `src/middlewares/cors.${ext}`), content: isTypeScript ? getCorsMiddlewareTemplateTS() : getCorsMiddlewareTemplate() },
+    { path: path.join(projectPath, `src/middlewares/errorHandler.${ext}`), content: isTypeScript ? getErrorHandlerTemplateTS() : getErrorHandlerTemplate() },
     { path: path.join(projectPath, '.env'), content: getEnvTemplate(dbChoice, projectName) },
     { path: path.join(projectPath, '.gitignore'), content: isTypeScript ? getGitignoreTemplate() + 'dist/\n' : getGitignoreTemplate() },
     { path: path.join(projectPath, 'README.md'), content: getReadmeTemplate(dbChoice, projectName) }
