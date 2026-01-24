@@ -80,7 +80,7 @@
   "files": [
     "typescript-templates-new.js",
     "shared-templates-new.js",
-    "test-templates.js",
+    "src/",
     "generateExpressCrud.js",
     "addCrudResource.js",
     "addCrudResource-single.js",

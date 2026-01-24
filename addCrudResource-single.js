@@ -11,7 +11,7 @@ import {
     getTestTemplateMongoTS,
     getTestTemplateMySQLTS,
     getTestTemplateMemoryTS
-} from './tests/test-templates.js';
+} from './src/templates/tests/index.js';
 import {
     sanitizeError,
     validatePath,
@@ -21,7 +21,8 @@ import {
 import {
     getModelTemplate,
     getControllerTemplate,
-    getServiceTemplate
+    getServiceTemplate,
+    getRoutesTemplate
 } from './src/templates/addResource/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -125,30 +126,6 @@ if (fs.existsSync(modelPath)) {
     process.exit(1);
 }
 
-// Routes template
-const routesTemplate = `import express from 'express';
-import * as ${resourceLower}Controller from '../controllers/${controllerFileName}';
-
-const router = express.Router();
-
-// GET all ${resourcePlural}
-router.get('/', ${resourceLower}Controller.getAll${resourceName}s);
-
-// GET ${resourceLower} by id
-router.get('/:id', ${resourceLower}Controller.get${resourceName}ById);
-
-// POST create new ${resourceLower}
-router.post('/', ${resourceLower}Controller.create${resourceName});
-
-// PUT update ${resourceLower}
-router.put('/:id', ${resourceLower}Controller.update${resourceName});
-
-// DELETE ${resourceLower}
-router.delete('/:id', ${resourceLower}Controller.delete${resourceName});
-
-export default router;
-`;
-
 // Write files
 const files = [
     { 
@@ -168,7 +145,7 @@ const files = [
     },
     { 
         path: path.join(srcDir, 'routes', routeFileName), 
-        content: routesTemplate,
+        content: getRoutesTemplate(resourceName, ext),
         type: 'Routes'
     }
 ];

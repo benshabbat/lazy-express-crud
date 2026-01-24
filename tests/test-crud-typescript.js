@@ -22,7 +22,7 @@ import {
 import {
     getJestConfigTS,
     getTestTemplateMongoTS,
-} from './test-templates.js';
+} from '../src/templates/tests/index.js';
 import {
     getEnvTemplate,
     getGitignoreTemplate,

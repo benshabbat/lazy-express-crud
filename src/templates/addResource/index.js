@@ -3,3 +3,4 @@
 export { getModelTemplate } from './modelTemplates.js';
 export { getControllerTemplate } from './controllerTemplates.js';
 export { getServiceTemplate } from './serviceTemplates.js';
+export { getRoutesTemplate } from './routesTemplates.js';

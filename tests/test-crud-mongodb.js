@@ -12,7 +12,7 @@ import { dirname } from 'path';
 import {
     getJestConfigJS,
     getTestTemplateMongoJS,
-} from './test-templates.js';
+} from '../src/templates/tests/index.js';
 import {
     getDatabaseConfigTemplate,
     getServerTemplate,
