@@ -69,7 +69,7 @@ export function generateMySQLModel(resourceName, fields, isTypeScript = false) {
     
     const imports = isTypeScript 
         ? `import db from '../config/database.js';
-import type { ${resourceName}, ${resourceName}Input } from '../types/index.js';
+import type { ${resourceName}, ${resourceName}Input } from '../types/${resourceName}.types.js';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';`
         : `import ${isTypeScript ? 'db' : 'pool'} from '../config/database.js';`;
     

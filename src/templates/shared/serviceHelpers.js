@@ -219,7 +219,8 @@ export function generateServiceImports(resourceName, modelFileName, dbChoice, is
     }
     
     if (isTypeScript) {
-        imports.push(`import type { ${resourceName}Input } from '../types/index.js';`);
+        // Import from separate types file for the resource
+        imports.push(`import type { ${resourceName}Input } from '../types/${resourceName}.types.js';`);
     }
     
     return imports.join('\n');

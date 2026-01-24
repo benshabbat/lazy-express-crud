@@ -21,7 +21,7 @@ import {
     hasCrudStructure,
     writeFiles,
     updateServerWithRoute,
-    updateTypesWithResource,
+    generateResourceTypes,
     fileExists
 } from './src/utils/index.js';
 import {
@@ -80,6 +80,7 @@ const resourceLower = resourceName.toLowerCase();
 const resourcePlural = resourceLower + 's';
 const routeFileName = `${resourceLower}Routes.${ext}`;
 const controllerFileName = `${resourceLower}Controller.${ext}`;
+const serviceFileName = `${resourceLower}Service.${ext}`;
 const modelFileName = `${resourceName}.${ext}`;
 
 console.log(`\n🚀 Adding new CRUD resource: ${resourceName}\n`);
@@ -99,7 +100,7 @@ const files = [
         type: 'Model'
     },
     { 
-        path: path.join(srcDir, 'services', modelFileName.replace('.js', 'Service.js').replace('.ts', 'Service.ts')), 
+        path: path.join(srcDir, 'services', serviceFileName), 
         content: getServiceTemplate(resourceName, dbChoice, modelFileName, isTypeScript),
         type: 'Service'
     },
@@ -138,6 +139,20 @@ files.push({
     type: 'Test'
 });
 
+// Create types file for TypeScript projects
+if (isTypeScript) {
+    const typesDir = path.join(srcDir, 'types');
+    const typeFileName = `${resourceName}.types.ts`;
+    const typeFilePath = path.join(typesDir, typeFileName);
+    
+    const typeContent = generateResourceTypes(resourceName, dbChoice);
+    files.push({
+        path: typeFilePath,
+        content: typeContent,
+        type: 'Types'
+    });
+}
+
 // Write all files
 writeFiles(files, false);
 files.forEach(file => {
@@ -150,17 +165,6 @@ const updated = updateServerWithRoute(serverPath, resourceName, ext);
 
 if (updated) {
     console.log(`✅ Updated server.${ext} with ${resourceName} routes`);
-}
-
-// Update types/index.ts for TypeScript projects
-if (isTypeScript) {
-    const typesPath = path.join(srcDir, 'types', 'index.ts');
-    if (fs.existsSync(typesPath)) {
-        const typesUpdated = updateTypesWithResource(typesPath, resourceName, dbChoice);
-        if (typesUpdated) {
-            console.log(`✅ Updated types/index.ts with ${resourceName} types`);
-        }
-    }
 }
 
 console.log(`\n✨ CRUD resource "${resourceName}" created successfully!\n`);

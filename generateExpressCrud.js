@@ -13,6 +13,8 @@ import {
 import {
     getTsConfigTemplate,
     getTypesTemplate,
+    getItemTypesTemplate,
+    getCommonTypesTemplate,
     getServerTemplateTS,
     getDatabaseConfigTemplateTS,
     getRoutesTemplateTS,
@@ -145,7 +147,8 @@ const files = [
 if (isTypeScript) {
     files.push(
         { path: path.join(projectPath, 'tsconfig.json'), content: getTsConfigTemplate() },
-        { path: path.join(projectPath, `src/types/index.${ext}`), content: getTypesTemplate(dbChoice) }
+        { path: path.join(projectPath, `src/types/Item.types.${ext}`), content: getItemTypesTemplate(dbChoice) },
+        { path: path.join(projectPath, `src/types/index.${ext}`), content: getCommonTypesTemplate() }
     );
 }
 

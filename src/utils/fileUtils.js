@@ -207,7 +207,38 @@ export function updateServerWithRoute(serverPath, resourceName, ext = 'js') {
 }
 
 /**
- * Update types.ts file with new resource types
+ * Generate TypeScript types for a resource in a separate file
+ * @param {string} resourceName - Name of the resource
+ * @param {string} dbChoice - Database choice (mongodb, mysql, memory)
+ * @returns {string} - TypeScript types content
+ */
+export function generateResourceTypes(resourceName, dbChoice) {
+    const idField = dbChoice === 'mongodb' ? '_id' : 'id';
+    const idType = dbChoice === 'mongodb' ? '?: string | undefined' : ': string';
+    const timestampFields = dbChoice === 'mysql' 
+        ? '    created_at?: Date;\n    updated_at?: Date;'
+        : '    createdAt?: Date;\n    updatedAt?: Date;';
+    
+    return `// TypeScript types for ${resourceName} resource
+
+export interface ${resourceName} {
+    ${idField}${idType};
+    name: string;
+    description?: string;
+    price?: number;
+    ${timestampFields}
+}
+
+export interface ${resourceName}Input {
+    name: string;
+    description?: string;
+    price?: number;
+}
+`;
+}
+
+/**
+ * Update types.ts file with new resource types (DEPRECATED - use generateResourceTypes instead)
  * @param {string} typesPath - Path to types/index.ts file
  * @param {string} resourceName - Name of the resource
  * @param {string} dbChoice - Database choice (mongodb, mysql, memory)
