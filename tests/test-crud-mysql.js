@@ -12,7 +12,7 @@ import { dirname } from 'path';
 import {
     getJestConfigJS,
     getTestTemplateMySQLJS,
-} from './test-templates.js';
+} from '../test-templates.js';
 import {
     getDatabaseConfigTemplate,
     getServerTemplate,
@@ -20,14 +20,14 @@ import {
     getEnvTemplate,
     getGitignoreTemplate,
     getReadmeTemplate
-} from './src/templates/project/index.js';
+} from '../src/templates/project/index.js';
 import {
     sanitizeError,
     validateProjectName,
     getControllerTemplate,
     getServiceTemplate,
     getModelTemplate
-} from './shared-templates-new.js';
+} from '../shared-templates-new.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

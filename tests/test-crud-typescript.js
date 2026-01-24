@@ -18,20 +18,20 @@ import {
     getControllerTemplateTS,
     getServiceTemplateTS,
     getModelTemplateTS
-} from './typescript-templates-new.js';
+} from '../typescript-templates-new.js';
 import {
     getJestConfigTS,
     getTestTemplateMongoTS,
-} from './test-templates.js';
+} from '../test-templates.js';
 import {
     getEnvTemplate,
     getGitignoreTemplate,
     getReadmeTemplate
-} from './src/templates/project/index.js';
+} from '../src/templates/project/index.js';
 import {
     sanitizeError,
     validateProjectName
-} from './shared-templates-new.js';
+} from '../shared-templates-new.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Automated CRUD testing with MySQL and TypeScript
- * Creates a test project with TypeScript and MySQL
+ * Automated CRUD testing with MongoDB
+ * Creates a test project with JavaScript and MongoDB
  */
 
 import fs from 'fs';
@@ -10,39 +10,35 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import {
-    getTsConfigTemplate,
-    getTypesTemplate,
-    getServerTemplateTS,
-    getDatabaseConfigTemplateTS,
-    getRoutesTemplateTS,
-    getControllerTemplateTS,
-    getServiceTemplateTS,
-    getModelTemplateTS
-} from './typescript-templates-new.js';
+    getJestConfigJS,
+    getTestTemplateMongoJS,
+} from '../test-templates.js';
 import {
-    getJestConfigTS,
-    getTestTemplateMySQLTS,
-} from './test-templates.js';
-import {
+    getDatabaseConfigTemplate,
+    getServerTemplate,
+    getRoutesTemplate,
     getEnvTemplate,
     getGitignoreTemplate,
     getReadmeTemplate
-} from './src/templates/project/index.js';
+} from '../src/templates/project/index.js';
 import {
     sanitizeError,
-    validateProjectName
-} from './shared-templates-new.js';
+    validateProjectName,
+    getControllerTemplate,
+    getServiceTemplate,
+    getModelTemplate
+} from '../shared-templates-new.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Test configuration constants
-const projectName = 'test-ts-mysql-crud';
-const dbChoice = 'mysql';
-const langChoice = 'typescript';
+const projectName = 'test-mongo-crud';
+const dbChoice = 'mongodb';
+const langChoice = 'javascript';
 const resourceName = 'Product';
 
-console.log('🚀 Starting automated TypeScript CRUD test with MySQL...\n');
+console.log('🚀 Starting automated CRUD test with MongoDB...\n');
 console.log(`📁 Project: ${projectName}`);
 console.log(`💾 Database: ${dbChoice}`);
 console.log(`💻 Language: ${langChoice}`);
@@ -69,57 +65,44 @@ try {
     fs.mkdirSync(path.join(projectPath, 'src', 'controllers'));
     fs.mkdirSync(path.join(projectPath, 'src', 'services'));
     fs.mkdirSync(path.join(projectPath, 'src', 'models'));
-    fs.mkdirSync(path.join(projectPath, 'src', 'types'));
     fs.mkdirSync(path.join(projectPath, '__tests__'));
 
     console.log('✅ Project directories created');
 
-    // Create TypeScript config
-    fs.writeFileSync(
-        path.join(projectPath, 'tsconfig.json'),
-        getTsConfigTemplate()
-    );
-
-    // Create types file
-    fs.writeFileSync(
-        path.join(projectPath, 'src', 'types', 'index.ts'),
-        getTypesTemplate()
-    );
-
     // Create config files
     fs.writeFileSync(
-        path.join(projectPath, 'src', 'config', 'database.ts'),
-        getDatabaseConfigTemplateTS(dbChoice)
+        path.join(projectPath, 'src', 'config', 'database.js'),
+        getDatabaseConfigTemplate(dbChoice)
     );
 
-    // Create server.ts
+    // Create server.js
     fs.writeFileSync(
-        path.join(projectPath, 'src', 'server.ts'),
-        getServerTemplateTS(resourceName, dbChoice, projectName)
+        path.join(projectPath, 'src', 'server.js'),
+        getServerTemplate(resourceName, dbChoice)
     );
 
     // Create routes
     fs.writeFileSync(
-        path.join(projectPath, 'src', 'routes', `${resourceName.toLowerCase()}Routes.ts`),
-        getRoutesTemplateTS(resourceName)
+        path.join(projectPath, 'src', 'routes', `${resourceName.toLowerCase()}Routes.js`),
+        getRoutesTemplate(resourceName)
     );
 
     // Create controller
     fs.writeFileSync(
-        path.join(projectPath, 'src', 'controllers', `${resourceName.toLowerCase()}Controller.ts`),
-        getControllerTemplateTS(resourceName, dbChoice)
+        path.join(projectPath, 'src', 'controllers', `${resourceName.toLowerCase()}Controller.js`),
+        getControllerTemplate(resourceName, dbChoice, langChoice)
     );
 
     // Create service
     fs.writeFileSync(
-        path.join(projectPath, 'src', 'services', `${resourceName.toLowerCase()}Service.ts`),
-        getServiceTemplateTS(resourceName, dbChoice)
+        path.join(projectPath, 'src', 'services', `${resourceName.toLowerCase()}Service.js`),
+        getServiceTemplate(resourceName, dbChoice, langChoice)
     );
 
     // Create model
     fs.writeFileSync(
-        path.join(projectPath, 'src', 'models', `${resourceName}.ts`),
-        getModelTemplateTS(resourceName, dbChoice)
+        path.join(projectPath, 'src', 'models', `${resourceName}.js`),
+        getModelTemplate(resourceName, dbChoice, langChoice)
     );
 
     console.log('✅ Source files created');
@@ -148,37 +131,28 @@ try {
     const packageJson = {
         name: projectName,
         version: '1.0.0',
-        description: 'Express CRUD API with MySQL and TypeScript',
+        description: 'Express CRUD API with MongoDB',
         type: 'module',
-        main: 'dist/server.js',
+        main: 'src/server.js',
         scripts: {
-            build: 'tsc',
-            start: 'node dist/server.js',
-            dev: 'tsx watch src/server.ts',
+            start: 'node src/server.js',
+            dev: 'node --watch src/server.js',
             test: 'node --experimental-vm-modules node_modules/jest/bin/jest.js'
         },
-        keywords: ['express', 'crud', 'mysql', 'typescript', 'rest-api'],
+        keywords: ['express', 'crud', 'mongodb', 'rest-api'],
         author: '',
         license: 'MIT',
         dependencies: {
             express: '^4.18.2',
-            mysql2: '^3.6.5',
+            mongoose: '^8.0.0',
             dotenv: '^16.3.1',
             cors: '^2.8.5',
             helmet: '^7.1.0',
             'express-rate-limit': '^7.1.5'
         },
         devDependencies: {
-            typescript: '^5.3.3',
-            tsx: '^4.7.0',
-            '@types/node': '^20.10.6',
-            '@types/express': '^4.17.21',
-            '@types/cors': '^2.8.17',
             jest: '^29.7.0',
-            '@types/jest': '^29.5.11',
-            'ts-jest': '^29.1.1',
-            supertest: '^6.3.3',
-            '@types/supertest': '^6.0.2'
+            supertest: '^6.3.3'
         }
     };
 
@@ -192,26 +166,23 @@ try {
     // Create Jest config
     fs.writeFileSync(
         path.join(projectPath, 'jest.config.js'),
-        getJestConfigTS()
+        getJestConfigJS()
     );
 
     // Create test file
     fs.writeFileSync(
-        path.join(projectPath, '__tests__', `${resourceName.toLowerCase()}.test.ts`),
-        getTestTemplateMySQLTS(resourceName)
+        path.join(projectPath, '__tests__', `${resourceName.toLowerCase()}.test.js`),
+        getTestTemplateMongoJS(resourceName)
     );
 
     console.log('✅ Test files created');
 
-    console.log('\n✨ TypeScript MySQL project created successfully!\n');
+    console.log('\n✨ Project created successfully!\n');
     console.log('📋 Next steps:');
     console.log(`   1. cd ${projectName}`);
     console.log('   2. npm install');
-    console.log('   3. Update .env with your MySQL connection details');
-    console.log('   4. npm run build    # Compile TypeScript');
-    console.log('   5. npm start        # Run compiled code');
-    console.log('   or');
-    console.log('   4. npm run dev      # Run with hot reload');
+    console.log('   3. Update .env with your MongoDB connection string');
+    console.log('   4. npm start');
     console.log('\n📝 Test your API:');
     console.log('   npm test');
     console.log('\n🎯 Available endpoints:');
