@@ -4,7 +4,13 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { validatePath, isPathInProject } from './src/validators/index.js';
+import {
+    validatePath,
+    isPathInProject,
+    readPackageJson,
+    validateProjectName,
+    fileExists
+} from './src/utils/index.js';
 import {
     getResourceCollectionItem,
     getHealthCheckItem,
@@ -45,33 +51,16 @@ try {
 
 console.log('🚀 Generating Postman Collection...\n');
 
-// Read package.json to get project name with validation
+// Read package.json to get project name
+const packageJson = readPackageJson(currentDir);
 let projectName = 'Express CRUD API';
-try {
-    const packageContent = fs.readFileSync(packageJsonPath, 'utf8');
-    
-    // Security: Limit file size (package.json should never be huge)
-    if (packageContent.length > 1024 * 1024) { // 1MB limit
-        throw new Error('package.json file too large');
-    }
-    
-    const packageJson = JSON.parse(packageContent);
-    
-    // Validate project name
-    if (packageJson.name && typeof packageJson.name === 'string') {
-        // Sanitize project name (remove potentially dangerous characters)
-        projectName = packageJson.name.replace(/[<>:"/\\|?*\x00-\x1f]/g, '').trim();
-        if (projectName.length > 214) {
-            projectName = projectName.substring(0, 214);
-        }
-        if (!projectName) {
-            projectName = 'Express CRUD API';
-        }
-    }
-} catch (error) {
-    console.log('⚠️  Could not read project name from package.json, using default');
-    if (error.code !== 'ENOENT') {
-        console.log(`   Error: ${error.message}`);
+
+if (packageJson) {
+    try {
+        projectName = validateProjectName(packageJson.name || 'express-crud-api');
+    } catch (error) {
+        console.warn(`⚠️  Invalid project name, using default: ${error.message}`);
+        projectName = 'Express CRUD API';
     }
 }
 

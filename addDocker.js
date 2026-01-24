@@ -5,7 +5,13 @@ import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { validatePath, validateProjectName } from './src/validators/index.js';
+import {
+    validatePath,
+    validateProjectName,
+    readPackageJson,
+    detectDatabase,
+    fileExists
+} from './src/utils/index.js';
 import {
     getDockerfileTemplate,
     getDockerIgnoreTemplate,
@@ -18,38 +24,28 @@ const __dirname = dirname(__filename);
 
 // Check if we're in an Express CRUD project
 const currentDir = process.cwd();
-const packageJsonPath = validatePath(path.join(currentDir, 'package.json'));
+const packageJson = readPackageJson(currentDir);
 
-if (!fs.existsSync(packageJsonPath)) {
+if (!packageJson) {
     console.error('❌ Error: Not in an Express CRUD project directory');
     console.error('Please run this command from the root of your Express CRUD project');
     process.exit(1);
 }
 
-// Detect database type from package.json
-let dbChoice = 'memory';
-try {
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-    const dependencies = packageJson.dependencies || {};
-    
-    if (dependencies.mongoose) {
-        dbChoice = 'mongodb';
-        console.log('✅ Detected: MongoDB (mongoose)');
-    } else if (dependencies.mysql2) {
-        dbChoice = 'mysql';
-        console.log('✅ Detected: MySQL (mysql2)');
-    } else {
-        console.log('ℹ️  No database detected, creating Docker setup for Node.js app only');
-    }
-} catch (error) {
-    console.error('❌ Error reading package.json:', error.message);
-    process.exit(1);
+// Detect database type
+const dbChoice = detectDatabase(currentDir);
+
+if (dbChoice === 'mongodb') {
+    console.log('✅ Detected: MongoDB (mongoose)');
+} else if (dbChoice === 'mysql') {
+    console.log('✅ Detected: MySQL (mysql2)');
+} else {
+    console.log('ℹ️  No database detected, creating Docker setup for Node.js app only');
 }
 
 console.log(`\n🐳 Setting up Docker for ${dbChoice === 'mongodb' ? 'MongoDB' : dbChoice === 'mysql' ? 'MySQL' : 'Node.js app'}...\n`);
 
-// Get project name from package.json and validate it
-const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+// Get project name and validate it
 let projectName;
 try {
     projectName = validateProjectName(packageJson.name || 'express-app');

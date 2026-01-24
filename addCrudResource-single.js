@@ -16,8 +16,13 @@ import {
     sanitizeError,
     validatePath,
     isPathInProject,
-    validateResourceName
-} from './shared-templates-new.js';
+    validateResourceName,
+    getProjectConfig,
+    hasCrudStructure,
+    writeFiles,
+    updateServerWithRoute,
+    fileExists
+} from './src/utils/index.js';
 import {
     getModelTemplate,
     getControllerTemplate,
@@ -49,66 +54,19 @@ try {
 // Check if we're in an Express CRUD project
 const currentDir = process.cwd();
 const srcDir = path.join(currentDir, 'src');
-const packageJsonPath = path.join(currentDir, 'package.json');
 
-if (!fs.existsSync(srcDir) || !fs.existsSync(packageJsonPath)) {
+if (!hasCrudStructure(currentDir)) {
     console.error('❌ Error: Not in an Express CRUD project directory');
     console.error('Please run this command from the root of your Express CRUD project');
     process.exit(1);
 }
 
-// Detect database type from package.json
-let dbChoice = 'memory';
-let isTypeScript = false;
-let ext = 'js';
+// Detect project configuration
+const config = getProjectConfig(currentDir);
+const { isTypeScript, database: dbChoice, extension: ext } = config;
 
-try {
-    if (!fs.existsSync(packageJsonPath)) {
-        console.error('❌ Error: package.json not found at:', packageJsonPath);
-        console.error('Current directory:', currentDir);
-        console.error('Please run this command from your Express CRUD project root directory');
-        process.exit(1);
-    }
-    
-    // Security: Check file size before reading (max 10MB)
-    const stats = fs.statSync(packageJsonPath);
-    if (stats.size > 10 * 1024 * 1024) {
-        throw new Error('package.json file too large (max 10MB)');
-    }
-    
-    // Security: Validate path
-    validatePath(packageJsonPath);
-    if (!isPathInProject(packageJsonPath, currentDir)) {
-        throw new Error('Security: package.json path is outside project directory');
-    }
-    
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-    const dependencies = packageJson.dependencies || {};
-    const devDependencies = packageJson.devDependencies || {};
-    
-    // Detect TypeScript
-    if (devDependencies.typescript || devDependencies.tsx) {
-        isTypeScript = true;
-        ext = 'ts';
-        console.log('✅ Detected: TypeScript project');
-    } else {
-        console.log('✅ Detected: JavaScript project');
-    }
-    
-    if (dependencies.mongoose) {
-        dbChoice = 'mongodb';
-        console.log('✅ Detected: MongoDB (mongoose)');
-    } else if (dependencies.mysql2) {
-        dbChoice = 'mysql';
-        console.log('✅ Detected: MySQL (mysql2)');
-    } else {
-        console.log('ℹ️  No database detected, using in-memory storage');
-    }
-} catch (error) {
-    console.error('❌ Error reading package.json:', error.message);
-    console.error('Current directory:', currentDir);
-    process.exit(1);
-}
+console.log(`✅ Detected: ${isTypeScript ? 'TypeScript' : 'JavaScript'} project`);
+console.log(`✅ Detected: ${dbChoice === 'mongodb' ? 'MongoDB (mongoose)' : dbChoice === 'mysql' ? 'MySQL (mysql2)' : 'In-memory storage'}`);
 
 // Generate names
 const resourceLower = resourceName.toLowerCase();
@@ -173,56 +131,18 @@ files.push({
     type: 'Test'
 });
 
+// Write all files
+writeFiles(files, false);
 files.forEach(file => {
-    try {
-        fs.writeFileSync(file.path, file.content);
-        console.log(`✅ Created ${file.type}: ${path.basename(file.path)}`);
-    } catch (error) {
-        console.error(`❌ Error creating ${file.type}: ${error.message}`);
-        process.exit(1);
-    }
+    console.log(`✅ Created ${file.type}: ${path.basename(file.path)}`);
 });
 
 // Update server.js/server.ts
 const serverPath = path.join(srcDir, `server.${ext}`);
-try {
-    let serverContent = fs.readFileSync(serverPath, 'utf8');
-    
-    // Check if route already imported
-    const importStatement = `import ${resourceLower}Routes from './routes/${routeFileName}';`;
-    if (!serverContent.includes(importStatement)) {
-        // Find the last import statement
-        const importRegex = /import .+ from .+;/g;
-        const imports = serverContent.match(importRegex);
-        if (imports && imports.length > 0) {
-            const lastImport = imports[imports.length - 1];
-            serverContent = serverContent.replace(lastImport, `${lastImport}\n${importStatement}`);
-        }
-    }
-    
-    // Check if route already registered
-    const routeStatement = `app.use('/api/${resourcePlural}', ${resourceLower}Routes);`;
-    if (!serverContent.includes(routeStatement)) {
-        // Find where to add the route (after other app.use routes)
-        const routeRegex = /app\.use\('\/api\/\w+',\s+\w+Routes\);/g;
-        const routes = serverContent.match(routeRegex);
-        if (routes && routes.length > 0) {
-            const lastRoute = routes[routes.length - 1];
-            serverContent = serverContent.replace(lastRoute, `${lastRoute}\n${routeStatement}`);
-        } else {
-            // If no routes exist, add after items route
-            const itemsRoute = "app.use('/api/items', itemRoutes);";
-            if (serverContent.includes(itemsRoute)) {
-                serverContent = serverContent.replace(itemsRoute, `${itemsRoute}\n${routeStatement}`);
-            }
-        }
-    }
-    
-    fs.writeFileSync(serverPath, serverContent);
+const updated = updateServerWithRoute(serverPath, resourceName, ext);
+
+if (updated) {
     console.log(`✅ Updated server.${ext} with ${resourceName} routes`);
-} catch (error) {
-    console.log(`⚠️  Note: Could not automatically update server.${ext}: ${error.message}`);
-    console.log('Please add the routes manually.');
 }
 
 console.log(`\n✨ CRUD resource "${resourceName}" created successfully!\n`);
