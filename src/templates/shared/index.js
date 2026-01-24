@@ -26,6 +26,17 @@ export {
     generateControllerImports
 } from './controllerHelpers.js';
 
+// Service helpers
+export {
+    generateGetAllMethod,
+    generateGetByIdMethod,
+    generateCreateMethod,
+    generateUpdateMethod,
+    generateDeleteMethod,
+    generateServiceMethods,
+    generateServiceImports
+} from './serviceHelpers.js';
+
 // Database helpers
 export {
     mongoHelpers,
