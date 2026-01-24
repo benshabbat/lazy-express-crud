@@ -63,6 +63,12 @@ const __dirname = dirname(__filename);
 // Get project name from command line arguments
 const projectName = process.argv[2] || 'express-crud-app';
 
+// Security: Basic length check to prevent DoS
+if (projectName.length > 214) {
+    console.error('❌ Error: Project name is too long (max 214 characters)');
+    process.exit(1);
+}
+
 // Validate the project name
 validateProjectName(projectName);
 

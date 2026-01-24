@@ -2,6 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 import { validatePath, isPathInProject } from '../validators/index.js';
+import { SECURITY_LIMITS } from '../config/security.js';
 
 /**
  * Read and parse package.json safely
@@ -16,10 +17,10 @@ export function readPackageJson(projectPath) {
             return null;
         }
         
-        // Security: Check file size before reading (max 10MB)
+        // Security: Check file size before reading
         const stats = fs.statSync(packageJsonPath);
-        if (stats.size > 10 * 1024 * 1024) {
-            throw new Error('package.json file too large (max 10MB)');
+        if (stats.size > SECURITY_LIMITS.MAX_PACKAGE_JSON_SIZE) {
+            throw new Error(`package.json file too large (max ${SECURITY_LIMITS.MAX_PACKAGE_JSON_SIZE / 1024 / 1024}MB)`);
         }
         
         // Security: Validate path
@@ -27,7 +28,6 @@ export function readPackageJson(projectPath) {
         if (!isPathInProject(packageJsonPath, projectPath)) {
             throw new Error('Security: package.json path is outside project directory');
         }
-        
         const content = fs.readFileSync(packageJsonPath, 'utf8');
         return JSON.parse(content);
     } catch (error) {

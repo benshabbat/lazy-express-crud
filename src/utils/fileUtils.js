@@ -2,6 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 import { validatePath, isPathInProject } from '../validators/index.js';
+import { SECURITY_LIMITS } from '../config/security.js';
 
 /**
  * Create directory recursively if it doesn't exist
@@ -10,6 +11,9 @@ import { validatePath, isPathInProject } from '../validators/index.js';
  */
 export function ensureDirectory(dirPath) {
     try {
+        // Security: Validate path
+        validatePath(dirPath);
+        
         if (!fs.existsSync(dirPath)) {
             fs.mkdirSync(dirPath, { recursive: true });
             return true;
@@ -106,6 +110,13 @@ export function readFileSafe(filePath, projectRoot = process.cwd()) {
             throw new Error('Security: File path is outside project directory');
         }
         
+        // Security: Check file size before reading
+        const stats = fs.statSync(filePath);
+        if (stats.size > SECURITY_LIMITS.MAX_FILE_SIZE) {
+            throw new Error(`File too large (max ${SECURITY_LIMITS.MAX_FILE_SIZE / 1024 / 1024}MB)`);
+        }
+        
+        
         return fs.readFileSync(filePath, 'utf8');
     } catch (error) {
         if (error.code === 'ENOENT') {
@@ -137,6 +148,12 @@ export function fileExists(filePath) {
  */
 export function updateServerWithRoute(serverPath, resourceName, ext = 'js') {
     try {
+        // Security: Validate inputs
+        validatePath(serverPath);
+        if (!resourceName || typeof resourceName !== 'string' || resourceName.length > SECURITY_LIMITS.MAX_RESOURCE_NAME_LENGTH) {
+            throw new Error('Invalid resource name');
+        }
+        
         let serverContent = readFileSafe(serverPath);
         
         if (!serverContent) {

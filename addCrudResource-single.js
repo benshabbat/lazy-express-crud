@@ -43,6 +43,12 @@ if (!resourceName) {
     process.exit(1);
 }
 
+// Security: Basic length check to prevent DoS
+if (resourceName.length > 100) {
+    console.error('❌ Error: Resource name is too long (max 100 characters)');
+    process.exit(1);
+}
+
 // Validate resource name
 try {
     validateResourceName(resourceName);
