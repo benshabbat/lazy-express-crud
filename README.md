@@ -23,7 +23,14 @@ Instantly scaffold a secure Express.js REST API with your choice of database (Mo
 ➕ **Smart Resource Generation** - Auto-detects database type and language  
 🌐 **Production Ready** - CORS whitelist, HTTPS enforcement, SSL/TLS support  
 📦 **Lightweight** - Minimal, carefully selected dependencies  
-🧪 **Unit Tests** - Auto-generated Jest tests for every resource
+🧪 **Unit Tests** - Auto-generated Jest tests for every resource  
+🛠️ **Maintainable** - Utils layer with centralized logic, -182 lines of duplicate code removed
+
+### What's New in v1.9.0 🎉
+- ♻️ **Major Refactoring** - Added comprehensive utils layer
+- 📦 **Code Reusability** - Centralized project detection, prompts, and file operations
+- 🔒 **Consistent Security** - All generators use same validation logic
+- 🧪 **Better Maintainability** - Single source of truth for common operations
 
 ### Security Features (10/10 Score) 🏆
 🔒 **NoSQL/SQL Injection Prevention** - Validated queries and ObjectId checking  
