@@ -5,22 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.10.0] - 2026-01-24
 
 ### Added
 - 🎨 **Shared Template Helpers** - Created centralized helper library for template generation
   - `src/templates/shared/validationHelpers.js` (270 lines) - Reusable validation functions (string, email, password, number, boolean)
   - `src/templates/shared/controllerHelpers.js` (290 lines) - Controller generation helpers with error handling patterns
-  - `src/templates/shared/serviceHelpers.js` (200 lines) - Service method generation with validation
+  - `src/templates/shared/serviceHelpers.js` (227 lines) - Service method generation with validation
   - `src/templates/shared/modelHelpers.js` (273 lines) - Model generation for MongoDB, MySQL, and Memory
   - `src/templates/shared/databaseHelpers.js` (200 lines) - Database-specific utilities (MongoDB, MySQL, Memory)
-  - `src/templates/shared/authHelpers.js` (300 lines) - JWT token, password hashing, and auth validation helpers
-  - `src/templates/shared/index.js` (50 lines) - Central export point for all shared helpers
-- ✨ **Auto-update TypeScript types** - Automatically generate and insert type definitions when adding new resources
-  - `updateTypesWithResource()` function in `fileUtils.js`
+  - `src/templates/shared/authHelpers.js` (368 lines) - JWT token, password hashing, and auth validation helpers
+  - `src/templates/shared/index.js` (65 lines) - Central export point for all shared helpers
+- ✨ **Resource-specific Type Files** - Each resource now gets its own TypeScript type file
+  - `generateResourceTypes()` function in `fileUtils.js` - Creates separate `.types.ts` files per resource
   - Generates both main interface and Input interface for new resources
   - Properly handles MongoDB vs MySQL field naming conventions
-  - Types are inserted before ApiResponse interface in `types/index.ts`
+  - Common types (ApiResponse) remain in `types/index.ts`
 
 ### Changed
 - ♻️ **Template Deduplication** - Eliminated ~1,700+ lines of duplicate code across all templates
@@ -44,9 +44,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic status code detection (400 for validation, 404 for not found, 401 for auth, 500 for server errors)
   - Flexible field configuration for models and services
   - Database-specific code centralized
+- 📝 **File Naming Convention** - Service files now use camelCase naming
+  - `userService.ts` instead of `UserService.ts`
+  - Follows common JavaScript/TypeScript conventions
+  - More consistent with ecosystem standards
+- 📦 **Type Organization** - Refactored TypeScript type file structure
+  - Each resource gets its own `.types.ts` file (e.g., `User.types.ts`)
+  - Common types remain in `types/index.ts`
+  - Cleaner imports: `from '../types/User.types.js'`
+  - Better code organization and discoverability
 
 ### Fixed
-- 🐛 **Missing TypeScript types** - New resources now automatically get proper type definitions in `types/index.ts`
+- 🐛 **TypeScript Types Generation** - Resources now get proper type definitions in separate files
+- 🐛 **Type File Creation Timing** - Fixed addCrudResource-single.js to create types before writing files
 
 ### Improved
 - 🎯 **Maintainability** - Single source of truth for all patterns
