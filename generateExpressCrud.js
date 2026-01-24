@@ -2,9 +2,13 @@
 
 import fs from 'fs';
 import path from 'path';
-import readline from 'readline';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import {
+    validateProjectName,
+    promptLanguage,
+    promptDatabase
+} from './src/utils/index.js';
 import {
     getTsConfigTemplate,
     getTypesTemplate,
@@ -55,60 +59,6 @@ const projectName = process.argv[2] || 'express-crud-app';
 // Validate the project name
 validateProjectName(projectName);
 
-// Function to ask user for database choice
-function askDatabaseChoice() {
-    return new Promise((resolve) => {
-        const rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-        });
-
-        console.log('\n📊 Choose your database:');
-        console.log('1. MongoDB (NoSQL)');
-        console.log('2. MySQL (SQL)');
-        console.log('3. In-Memory (No database - for demo)');
-        
-        rl.question('\nEnter your choice (1/2/3): ', (answer) => {
-            rl.close();
-            const choice = answer.trim();
-            if (choice === '1') {
-                resolve('mongodb');
-            } else if (choice === '2') {
-                resolve('mysql');
-            } else if (choice === '3') {
-                resolve('memory');
-            } else {
-                console.log('Invalid choice. Using in-memory storage as default.');
-                resolve('memory');
-            }
-        });
-    });
-}
-
-// Function to ask user for language choice
-function askLanguageChoice() {
-    return new Promise((resolve) => {
-        const rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-        });
-
-        console.log('\n💻 Choose your language:');
-        console.log('1. JavaScript (ES6+)');
-        console.log('2. TypeScript');
-        
-        rl.question('\nEnter your choice (1/2): ', (answer) => {
-            rl.close();
-            const choice = answer.trim();
-            if (choice === '2') {
-                resolve('typescript');
-            } else {
-                resolve('javascript');
-            }
-        });
-    });
-}
-
 // Create project directory
 const projectPath = path.join(process.cwd(), projectName);
 
@@ -121,10 +71,10 @@ if (fs.existsSync(projectPath)) {
 // Main async function
 async function createProject() {
     // Ask for language choice
-    const langChoice = await askLanguageChoice();
+    const langChoice = await promptLanguage();
     
     // Ask for database choice
-    const dbChoice = await askDatabaseChoice();
+    const dbChoice = await promptDatabase();
     
     const isTypeScript = langChoice === 'typescript';
     const ext = isTypeScript ? 'ts' : 'js';

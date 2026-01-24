@@ -5,8 +5,17 @@ import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { validatePath, isPathInProject } from './src/validators/index.js';
-import { sanitizeError } from './src/utils/index.js';
+import {
+    validatePath,
+    isPathInProject,
+    sanitizeError,
+    isExpressProject,
+    isTypeScriptProject,
+    getProjectExtension,
+    ensureDirectory,
+    writeFile,
+    updateServerWithRoute
+} from './src/utils/index.js';
 import {
   getUserModelTemplate,
   getAuthControllerTemplate,
@@ -26,47 +35,16 @@ function sanitizeString(input) {
   return input.replace(/[\x00-\x1F\x7F]/g, '');
 }
 
-// Check if current directory is an Express project
-function isExpressProject() {
-  const packageJsonPath = path.join(process.cwd(), "package.json");
-  
-  if (!fs.existsSync(packageJsonPath)) {
-    return false;
-  }
-
-  try {
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-    return packageJson.dependencies && packageJson.dependencies.express;
-  } catch (error) {
-    return false;
-  }
-}
-
-// Detect if project is TypeScript
-function isTypeScriptProject() {
-  const packageJsonPath = path.join(process.cwd(), "package.json");
-  
-  try {
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-    const devDeps = packageJson.devDependencies || {};
-    return !!(devDeps.typescript || devDeps.tsx);
-  } catch (error) {
-    return false;
-  }
-}
-
 // Check if auth already exists
 function authExists() {
-  const isTS = isTypeScriptProject();
-  const ext = isTS ? 'ts' : 'js';
+  const ext = getProjectExtension(process.cwd());
   const authRoutesPath = path.join(process.cwd(), "src", "routes", `authRoutes.${ext}`);
   return fs.existsSync(authRoutesPath);
 }
 
 // Create User model with bcrypt
 function createUserModel() {
-  const isTS = isTypeScriptProject();
-  const ext = isTS ? 'ts' : 'js';
+  const ext = getProjectExtension(process.cwd());
   const modelDir = path.join(process.cwd(), "src", "models");
   const modelPath = path.join(modelDir, `User.${ext}`);
 
@@ -84,20 +62,18 @@ function createUserModel() {
     return;
   }
 
-  if (!fs.existsSync(modelDir)) {
-    fs.mkdirSync(modelDir, { recursive: true });
-  }
+  ensureDirectory(modelDir);
 
+  const isTS = ext === 'ts';
   const modelContent = getUserModelTemplate(isTS);
 
-  fs.writeFileSync(modelPath, modelContent);
+  writeFile(modelPath, modelContent);
   console.log("✓ Created User model with bcrypt (User." + ext + ")");
 }
 
 // Create auth controller with JWT
 function createAuthController() {
-  const isTS = isTypeScriptProject();
-  const ext = isTS ? 'ts' : 'js';
+  const ext = getProjectExtension(process.cwd());
   const controllerDir = path.join(process.cwd(), "src", "controllers");
   const controllerPath = path.join(controllerDir, `authController.${ext}`);
 
@@ -108,20 +84,18 @@ function createAuthController() {
     throw new Error("Security: Attempted to write outside project directory");
   }
 
-  if (!fs.existsSync(controllerDir)) {
-    fs.mkdirSync(controllerDir, { recursive: true });
-  }
+  ensureDirectory(controllerDir);
 
+  const isTS = ext === 'ts';
   const controllerContent = getAuthControllerTemplate(isTS);
 
-  fs.writeFileSync(controllerPath, controllerContent);
+  writeFile(controllerPath, controllerContent);
   console.log("✓ Created auth controller with JWT");
 }
 
 // Create auth routes
 function createAuthRoutes() {
-  const isTS = isTypeScriptProject();
-  const ext = isTS ? 'ts' : 'js';
+  const ext = getProjectExtension(process.cwd());
   const routesDir = path.join(process.cwd(), "src", "routes");
   const routesPath = path.join(routesDir, `authRoutes.${ext}`);
 
@@ -132,20 +106,17 @@ function createAuthRoutes() {
     throw new Error("Security: Attempted to write outside project directory");
   }
 
-  if (!fs.existsSync(routesDir)) {
-    fs.mkdirSync(routesDir, { recursive: true });
-  }
+  ensureDirectory(routesDir);
 
   const routesContent = getAuthRoutesTemplate();
 
-  fs.writeFileSync(routesPath, routesContent);
+  writeFile(routesPath, routesContent);
   console.log("✓ Created auth routes");
 }
 
 // Create auth middleware
 function createAuthMiddleware() {
-  const isTS = isTypeScriptProject();
-  const ext = isTS ? 'ts' : 'js';
+  const ext = getProjectExtension(process.cwd());
   const middlewareDir = path.join(process.cwd(), "src", "middlewares");
   const middlewarePath = path.join(middlewareDir, `authMiddleware.${ext}`);
 
@@ -156,116 +127,28 @@ function createAuthMiddleware() {
     throw new Error("Security: Attempted to write outside project directory");
   }
 
-  if (!fs.existsSync(middlewareDir)) {
-    fs.mkdirSync(middlewareDir, { recursive: true });
-  }
+  ensureDirectory(middlewareDir);
 
+  const isTS = ext === 'ts';
   const middlewareContent = getAuthMiddlewareTemplate(isTS);
 
-  fs.writeFileSync(middlewarePath, middlewareContent);
+  writeFile(middlewarePath, middlewareContent);
   console.log("✓ Created auth middleware");
 }
 
 // Update server.js/server.ts to include auth routes
 function updateServerJs() {
-  const isTS = isTypeScriptProject();
-  const ext = isTS ? 'ts' : 'js';
+  const ext = getProjectExtension(process.cwd());
   
-  // Try multiple possible locations for server file
-  const possiblePaths = [
-    path.join(process.cwd(), "server." + ext),
-    path.join(process.cwd(), "src", "server." + ext),
-    path.join(process.cwd(), "app." + ext),
-    path.join(process.cwd(), "src", "app." + ext)
-  ];
-
-  let serverPath = null;
-  for (const tryPath of possiblePaths) {
-    if (fs.existsSync(tryPath)) {
-      serverPath = tryPath;
-      break;
-    }
-  }
-
-  if (!serverPath) {
-    console.log("⚠ server." + ext + " not found. Please add auth routes manually:");
+  // Use the utility function to update server with auth routes
+  const success = updateServerWithRoute(null, 'auth', ext, '/api/auth');
+  
+  if (!success) {
+    console.log("⚠ Could not automatically update server." + ext);
+    console.log("  Please add auth routes manually:");
     console.log("  import authRoutes from './routes/authRoutes.js';");
     console.log("  app.use('/api/auth', authRoutes);");
-    return;
   }
-
-  // Security: Validate path
-  validatePath(serverPath);
-  if (!isPathInProject(serverPath, process.cwd())) {
-    throw new Error("Security: Attempted to write outside project directory");
-  }
-
-  // Security: Check file size before reading (max 1MB)
-  const stats = fs.statSync(serverPath);
-  if (stats.size > 1024 * 1024) {
-    throw new Error("server.js file too large (max 1MB)");
-  }
-
-  let serverContent = fs.readFileSync(serverPath, "utf8");
-
-  // Check if auth routes already imported
-  if (serverContent.includes("authRoutes")) {
-    console.log("⚠ Auth routes already exist in server." + ext);
-    return;
-  }
-
-  // Determine the correct import path based on server.js location
-  const isServerInSrc = serverPath.includes(path.join("src", "server." + ext)) || 
-                        serverPath.includes(path.join("src", "app." + ext));
-  const authRoutesImportPath = isServerInSrc 
-    ? "import authRoutes from './routes/authRoutes.js';\n"
-    : "import authRoutes from './src/routes/authRoutes.js';\n";
-
-  // Add import statement after other route imports
-  const importMatch = serverContent.match(/(import.*Routes.*from.*['"]\.\/(src\/)?routes\/.*['"];?\n)/);
-  if (importMatch) {
-    const lastImport = importMatch[0];
-    const importIndex = serverContent.lastIndexOf(lastImport) + lastImport.length;
-    serverContent =
-      serverContent.slice(0, importIndex) +
-      authRoutesImportPath +
-      serverContent.slice(importIndex);
-  } else {
-    // If no route imports found, add after express import
-    const expressImportMatch = serverContent.match(/(import express from ['"]express['"];?\n)/);
-    if (expressImportMatch) {
-      const expressImport = expressImportMatch[0];
-      const importIndex = serverContent.indexOf(expressImport) + expressImport.length;
-      serverContent =
-        serverContent.slice(0, importIndex) +
-        authRoutesImportPath +
-        serverContent.slice(importIndex);
-    }
-  }
-
-  // Add route usage
-  const routeMatch = serverContent.match(/(app\.use\(['"]\/api\/.*?['"],.*?Routes\);?\n)/);
-  if (routeMatch) {
-    const lastRoute = routeMatch[0];
-    const routeIndex = serverContent.lastIndexOf(lastRoute) + lastRoute.length;
-    serverContent =
-      serverContent.slice(0, routeIndex) +
-      "app.use('/api/auth', authRoutes);\n" +
-      serverContent.slice(routeIndex);
-  } else {
-    // If no routes found, add before app.listen
-    const listenMatch = serverContent.match(/(app\.listen\()/);
-    if (listenMatch) {
-      const listenIndex = serverContent.indexOf(listenMatch[0]);
-      serverContent =
-        serverContent.slice(0, listenIndex) +
-        "\n// Auth routes\napp.use('/api/auth', authRoutes);\n\n" +
-        serverContent.slice(listenIndex);
-    }
-  }
-
-  fs.writeFileSync(serverPath, serverContent);
-  console.log("✓ Updated server." + ext + " with auth routes");
 }
 
 // Update package.json to include dependencies
