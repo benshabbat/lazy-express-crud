@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- 🎨 **Shared Template Helpers** - Created centralized helper library for template generation
+  - `src/templates/shared/validationHelpers.js` - Reusable validation functions (string, email, password, number, boolean)
+  - `src/templates/shared/controllerHelpers.js` - Controller generation helpers with error handling patterns
+  - `src/templates/shared/databaseHelpers.js` - Database-specific utilities (MongoDB, MySQL, Memory)
+  - `src/templates/shared/authHelpers.js` - JWT token, password hashing, and auth validation helpers
+  - `src/templates/shared/index.js` - Central export point for all shared helpers
+
+### Changed
+- ♻️ **Template Deduplication** - Eliminated ~500+ lines of duplicate code across controller templates
+  - `src/templates/javascript/controllerTemplate.js` - Reduced from 118 to 21 lines (-82%)
+  - `src/templates/typescript/controllerTemplate.js` - Reduced from 110 to 18 lines (-84%)
+  - `src/templates/addResource/controllerTemplates.js` - Reduced from 300 to 26 lines (-91%)
+  - All controller templates now use `generateAllControllerMethods()` shared helper
+  - Consistent error handling patterns across all templates
+  - Automatic status code detection (400 for validation, 404 for not found, 500 for server errors)
+
+### Improved
+- 🎯 **Maintainability** - Single source of truth for controller patterns
+  - Bug fixes apply to all templates automatically
+  - New features can be added in one place
+  - Easier to test and validate template logic
+- 🔧 **Consistency** - All generated code follows identical patterns
+  - Same error handling across JavaScript and TypeScript
+  - Same validation approach for all databases
+  - Uniform API response format
+- 📖 **Code Quality** - Cleaner template files, better separation of concerns
+  - Template files focus on structure, helpers handle implementation
+  - Reduced complexity in template generation
+  - Better code reusability
+
 ## [1.9.1] - 2026-01-24
 
 ### Security
