@@ -12,7 +12,7 @@
     "add-docker": "addDocker.js"
   },
   "scripts": {
-    "test": "node generateExpressCrud.js test-project"
+    "test": "node tests/run-all.js"
   },
   "keywords": [
     "express",

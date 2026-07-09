@@ -21,13 +21,13 @@ import {
     getGitignoreTemplate,
     getReadmeTemplate
 } from '../src/templates/project/index.js';
+import { sanitizeError } from '../src/utils/errorUtils.js';
+import { validateProjectName } from '../src/validators/nameValidators.js';
 import {
-    sanitizeError,
-    validateProjectName,
     getControllerTemplate,
     getServiceTemplate,
     getModelTemplate
-} from '../shared-templates-new.js';
+} from '../src/templates/javascript/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

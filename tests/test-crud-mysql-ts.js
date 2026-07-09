@@ -18,7 +18,7 @@ import {
     getControllerTemplateTS,
     getServiceTemplateTS,
     getModelTemplateTS
-} from '../typescript-templates-new.js';
+} from '../src/templates/typescript/index.js';
 import {
     getJestConfigTS,
     getTestTemplateMySQLTS,
@@ -28,10 +28,8 @@ import {
     getGitignoreTemplate,
     getReadmeTemplate
 } from '../src/templates/project/index.js';
-import {
-    sanitizeError,
-    validateProjectName
-} from '../shared-templates-new.js';
+import { sanitizeError } from '../src/utils/errorUtils.js';
+import { validateProjectName } from '../src/validators/nameValidators.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
