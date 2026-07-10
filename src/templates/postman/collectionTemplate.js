@@ -126,6 +126,86 @@ export function getResourceCollectionItem(resourceName) {
 }
 
 /**
+ * Generate Postman collection item for the auth routes (register/login/me)
+ * These routes don't follow the generic CRUD pattern or plural naming
+ * (they are mounted at '/api/auth', not '/api/auths'), so they need a
+ * dedicated template instead of getResourceCollectionItem().
+ * @returns {object} Postman collection item for auth
+ */
+export function getAuthCollectionItem() {
+    return {
+        name: 'Auth',
+        item: [
+            {
+                name: 'Register',
+                request: {
+                    method: 'POST',
+                    header: [
+                        {
+                            key: 'Content-Type',
+                            value: 'application/json'
+                        }
+                    ],
+                    body: {
+                        mode: 'raw',
+                        raw: `{\n  "email": "user@example.com",\n  "password": "password123",\n  "name": "John Doe"\n}`
+                    },
+                    url: {
+                        raw: '{{baseUrl}}/api/auth/register',
+                        host: ['{{baseUrl}}'],
+                        path: ['api', 'auth', 'register']
+                    },
+                    description: 'Register a new user'
+                },
+                response: []
+            },
+            {
+                name: 'Login',
+                request: {
+                    method: 'POST',
+                    header: [
+                        {
+                            key: 'Content-Type',
+                            value: 'application/json'
+                        }
+                    ],
+                    body: {
+                        mode: 'raw',
+                        raw: `{\n  "email": "user@example.com",\n  "password": "password123"\n}`
+                    },
+                    url: {
+                        raw: '{{baseUrl}}/api/auth/login',
+                        host: ['{{baseUrl}}'],
+                        path: ['api', 'auth', 'login']
+                    },
+                    description: 'Login and receive a JWT token'
+                },
+                response: []
+            },
+            {
+                name: 'Get Current User',
+                request: {
+                    method: 'GET',
+                    header: [
+                        {
+                            key: 'Authorization',
+                            value: 'Bearer {{authToken}}'
+                        }
+                    ],
+                    url: {
+                        raw: '{{baseUrl}}/api/auth/me',
+                        host: ['{{baseUrl}}'],
+                        path: ['api', 'auth', 'me']
+                    },
+                    description: 'Get the currently authenticated user (requires JWT token)'
+                },
+                response: []
+            }
+        ]
+    };
+}
+
+/**
  * Generate health check collection item
  * @returns {object} Health check Postman collection item
  */

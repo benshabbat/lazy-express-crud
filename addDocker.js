@@ -10,7 +10,8 @@ import {
     validateProjectName,
     readPackageJson,
     detectDatabase,
-    fileExists
+    fileExists,
+    getProjectExtension
 } from './src/utils/index.js';
 import {
     getDockerfileTemplate,
@@ -65,25 +66,31 @@ const dockerignoreTemplate = getDockerIgnoreTemplate();
 const dockerComposeContent = getDockerComposeTemplate(dbChoice, projectName, mongoExpressPassword, mysqlPassword);
 const dockerReadmeContent = getDockerReadmeTemplate(dbChoice, projectName);
 
-// Create Dockerfile with path validation
-const dockerfilePath = validatePath(path.join(currentDir, 'Dockerfile'));
-fs.writeFileSync(dockerfilePath, dockerfileTemplate);
-console.log('✅ Created Dockerfile');
+// Create Docker files with path validation
+try {
+    // Create Dockerfile
+    const dockerfilePath = validatePath(path.join(currentDir, 'Dockerfile'));
+    fs.writeFileSync(dockerfilePath, dockerfileTemplate);
+    console.log('✅ Created Dockerfile');
 
-// Create .dockerignore with path validation
-const dockerignorePath = validatePath(path.join(currentDir, '.dockerignore'));
-fs.writeFileSync(dockerignorePath, dockerignoreTemplate);
-console.log('✅ Created .dockerignore');
+    // Create .dockerignore
+    const dockerignorePath = validatePath(path.join(currentDir, '.dockerignore'));
+    fs.writeFileSync(dockerignorePath, dockerignoreTemplate);
+    console.log('✅ Created .dockerignore');
 
-// Create docker-compose.yml with path validation
-const dockerComposePath = validatePath(path.join(currentDir, 'docker-compose.yml'));
-fs.writeFileSync(dockerComposePath, dockerComposeContent);
-console.log('✅ Created docker-compose.yml');
+    // Create docker-compose.yml
+    const dockerComposePath = validatePath(path.join(currentDir, 'docker-compose.yml'));
+    fs.writeFileSync(dockerComposePath, dockerComposeContent);
+    console.log('✅ Created docker-compose.yml');
 
-// Create README.docker.md with path validation
-const dockerReadmePath = validatePath(path.join(currentDir, 'README.docker.md'));
-fs.writeFileSync(dockerReadmePath, dockerReadmeContent);
-console.log('✅ Created README.docker.md');
+    // Create README.docker.md
+    const dockerReadmePath = validatePath(path.join(currentDir, 'README.docker.md'));
+    fs.writeFileSync(dockerReadmePath, dockerReadmeContent);
+    console.log('✅ Created README.docker.md');
+} catch (error) {
+    console.error(`❌ Error: Failed to create Docker files: ${error.message}`);
+    process.exit(1);
+}
 
 // Update .env if needed
 const envPath = validatePath(path.join(currentDir, '.env'));
@@ -112,11 +119,12 @@ if (fs.existsSync(envPath)) {
     }
 }
 
-// Add health check endpoint to server.js if it doesn't exist
-const serverPath = validatePath(path.join(currentDir, 'src', 'server.js'));
+// Add health check endpoint to server.js/server.ts if it doesn't exist
+const serverExt = getProjectExtension(currentDir);
+const serverPath = validatePath(path.join(currentDir, 'src', `server.${serverExt}`));
 if (fs.existsSync(serverPath)) {
     let serverContent = fs.readFileSync(serverPath, 'utf8');
-    
+
     if (!serverContent.includes('/health')) {
         // Find the last route definition (before error handling)
         const insertPoint = serverContent.indexOf('// Error handling middleware');
@@ -124,9 +132,13 @@ if (fs.existsSync(serverPath)) {
             const healthRoute = `\n// Health check endpoint for Docker\napp.get('/health', (req, res) => {\n    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });\n});\n\n`;
             serverContent = serverContent.slice(0, insertPoint) + healthRoute + serverContent.slice(insertPoint);
             fs.writeFileSync(serverPath, serverContent);
-            console.log('✅ Added /health endpoint to server.js');
+            console.log(`✅ Added /health endpoint to server.${serverExt}`);
+        } else {
+            console.log(`⚠️  Could not find insertion point in server.${serverExt} - please add a /health endpoint manually`);
         }
     }
+} else {
+    console.log(`⚠️  Could not find src/server.${serverExt} - please add a /health endpoint manually`);
 }
 
 console.log('\n✨ Docker setup complete!\n');

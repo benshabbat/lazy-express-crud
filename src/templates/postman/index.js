@@ -1,7 +1,8 @@
 // Export all Postman templates
 
-export { 
+export {
     getResourceCollectionItem,
+    getAuthCollectionItem,
     getHealthCheckItem,
     getPostmanCollection
 } from './collectionTemplate.js';

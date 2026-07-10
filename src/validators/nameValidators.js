@@ -34,43 +34,34 @@ export function validateResourceName(name) {
  * Validate project name for npm package naming conventions
  * @param {string} name - Project name to validate
  * @returns {boolean} True if valid
- * @throws {Error} If validation fails (exits process)
+ * @throws {Error} If validation fails
  */
 export function validateProjectName(name) {
     // Check length (prevent DoS)
-    if (!name || name.length < SECURITY_LIMITS.MIN_PROJECT_NAME_LENGTH || 
+    if (!name || name.length < SECURITY_LIMITS.MIN_PROJECT_NAME_LENGTH ||
         name.length > SECURITY_LIMITS.MAX_PROJECT_NAME_LENGTH) {
-        console.error(`❌ Error: Project name must be between ${SECURITY_LIMITS.MIN_PROJECT_NAME_LENGTH} and ${SECURITY_LIMITS.MAX_PROJECT_NAME_LENGTH} characters.`);
-        process.exit(1);
+        throw new Error(`Project name must be between ${SECURITY_LIMITS.MIN_PROJECT_NAME_LENGTH} and ${SECURITY_LIMITS.MAX_PROJECT_NAME_LENGTH} characters.`);
     }
-    
+
     // Check for dangerous patterns
-    try {
-        checkDangerousPatterns(name);
-    } catch (error) {
-        console.error(`❌ Error: ${error.message}`);
-        process.exit(1);
-    }
-    
+    checkDangerousPatterns(name);
+
     // Check for valid characters (alphanumeric, dash, underscore)
     const validPattern = /^[a-zA-Z0-9_-]+$/;
-    
+
     if (!validPattern.test(name)) {
-        console.error('❌ Error: Project name can only contain letters, numbers, dashes, and underscores.');
-        process.exit(1);
+        throw new Error('Project name can only contain letters, numbers, dashes, and underscores.');
     }
-    
+
     // Prevent reserved names
     if (RESERVED_NAMES.projects.includes(name.toLowerCase())) {
-        console.error(`❌ Error: "${name}" is a reserved name and cannot be used.`);
-        process.exit(1);
+        throw new Error(`"${name}" is a reserved name and cannot be used.`);
     }
-    
+
     // Prevent starting with dot (hidden files)
     if (name.startsWith('.')) {
-        console.error('❌ Error: Project name cannot start with a dot.');
-        process.exit(1);
+        throw new Error('Project name cannot start with a dot.');
     }
-    
+
     return true;
 }
