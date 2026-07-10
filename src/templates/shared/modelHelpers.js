@@ -169,26 +169,29 @@ export default ${resourceName}${isTypeScript ? 'Model as any' : ''};
 export function generateMemoryModel(resourceName, fields) {
     const resourceLower = resourceName.toLowerCase();
     const resourcePlural = resourceLower + 's';
-    
-    // Generate sample data
-    const sampleFields = fields.map(f => `        ${f.name}: ${typeof f.value === 'string' ? `'${f.value}'` : f.value}`).join(',\n');
-    
+
+    // Generate sample data for fields other than 'name': 'name' is set individually
+    // per demo record below (so each sample row gets a distinct, readable name),
+    // and including it again here would create a duplicate 'name' key in the
+    // generated object literal (invalid/misleading code, and a TS compile error).
+    const sampleFieldsList = fields.filter(f => f.name !== 'name');
+    const sampleFieldsStr = sampleFieldsList.map(f => `        ${f.name}: ${typeof f.value === 'string' ? `'${f.value}'` : f.value}`).join(',\n');
+    const sampleFieldsBlock = sampleFieldsStr ? `${sampleFieldsStr},\n` : '';
+
     const fieldsList = fields.map(f => f.name).join(', ');
     const fieldAssignments = fields.map(f => `            ${f.name}: data.${f.name}${f.optional ? ` || ${typeof f.default === 'string' ? `'${f.default}'` : f.default}` : ''}`).join(',\n');
-    
+
     return `// In-memory storage (for demo purposes only - data will be lost on server restart)
 let ${resourcePlural} = [
-    { 
-        id: '1', 
-        name: 'Sample ${resourceName} 1', 
-${sampleFields},
-        createdAt: new Date().toISOString()
+    {
+        id: '1',
+        name: 'Sample ${resourceName} 1',
+${sampleFieldsBlock}        createdAt: new Date().toISOString()
     },
-    { 
-        id: '2', 
-        name: 'Sample ${resourceName} 2', 
-${sampleFields},
-        createdAt: new Date().toISOString()
+    {
+        id: '2',
+        name: 'Sample ${resourceName} 2',
+${sampleFieldsBlock}        createdAt: new Date().toISOString()
     }
 ];
 let nextId = 3;
