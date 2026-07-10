@@ -17,7 +17,8 @@ const testFiles = [
     'test-crud-mongodb.js',
     'test-crud-mysql.js',
     'test-crud-typescript.js',
-    'test-crud-mysql-ts.js'
+    'test-crud-mysql-ts.js',
+    'test-cli-piped-stdin.js'
 ];
 
 let failed = 0;
