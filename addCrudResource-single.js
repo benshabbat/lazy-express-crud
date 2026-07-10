@@ -170,6 +170,11 @@ const updated = updateServerWithRoute(serverPath, resourceName, ext);
 
 if (updated) {
     console.log(`✅ Updated server.${ext} with ${resourceName} routes`);
+} else {
+    console.log(`⚠ Could not automatically update server.${ext}`);
+    console.log('  Please add the route manually:');
+    console.log(`  import ${resourceLower}Routes from './routes/${routeFileName}';`);
+    console.log(`  app.use('/api/${resourcePlural}', ${resourceLower}Routes);`);
 }
 
 console.log(`\n✨ CRUD resource "${resourceName}" created successfully!\n`);

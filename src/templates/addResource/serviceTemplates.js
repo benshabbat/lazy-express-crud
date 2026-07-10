@@ -12,7 +12,10 @@ import { generateServiceImports, generateServiceMethods } from '../shared/servic
  * @returns {string} Service template code
  */
 export function getServiceTemplate(resourceName, dbChoice, modelFileName, isTypeScript) {
-    const imports = generateServiceImports(resourceName, modelFileName, dbChoice, isTypeScript);
+    // Note: import specifiers always use '.js', even in TypeScript projects
+    // (Node's NodeNext module resolution requires this - it maps to the compiled output).
+    const modelImportFileName = modelFileName.replace(/\.(js|ts)$/, '.js');
+    const imports = generateServiceImports(resourceName, modelImportFileName, dbChoice, isTypeScript);
     // For addResource, we only use name and description (no price)
     const methods = generateServiceMethods(resourceName, dbChoice, isTypeScript, ['name', 'description']);
     
