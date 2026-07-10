@@ -154,7 +154,12 @@ if (isTypeScript) {
 }
 
 // Write all files
-writeFiles(files, false);
+try {
+    writeFiles(files, false);
+} catch (error) {
+    console.error(`❌ Error: Failed to create resource "${resourceName}": ${error.message}`);
+    process.exit(1);
+}
 files.forEach(file => {
     console.log(`✅ Created ${file.type}: ${path.basename(file.path)}`);
 });

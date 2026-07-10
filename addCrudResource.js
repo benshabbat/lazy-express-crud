@@ -87,3 +87,8 @@ if (failCount > 0) {
     console.log(`⚠️  ${failCount} resource${failCount !== 1 ? 's' : ''} failed`);
 }
 console.log('='.repeat(50) + '\n');
+
+// Exit with a non-zero code if any resource failed, so CI/scripts can detect the failure
+if (failCount > 0) {
+    process.exit(1);
+}
