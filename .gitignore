@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+
+# Test/demo projects generated while working on this repo
+test-project/
+test-app/
+test-app2/
+demo-app/
+my-api/
+my-project/
+my-project2/
+my-project3/
+test-esm-project/
+test-esm-complete/
+test-mysql-docker/
+test-mysql/
+test-docker-secure/
+express-crud-app/
+auth-test/
+test-secure/
+test-mongo/
+test-mongo-crud/
+test-ts-mongo-crud/
+test-mysql-crud/
+test-ts-mysql-crud/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vs/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Misc
+*.tgz
+coverage/
+.nyc_output/
