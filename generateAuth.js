@@ -139,10 +139,11 @@ function createAuthMiddleware() {
 // Update server.js/server.ts to include auth routes
 function updateServerJs() {
   const ext = getProjectExtension(process.cwd());
-  
+  const serverPath = path.join(process.cwd(), 'src', `server.${ext}`);
+
   // Use the utility function to update server with auth routes
-  const success = updateServerWithRoute(null, 'auth', ext, '/api/auth');
-  
+  const success = updateServerWithRoute(serverPath, 'auth', ext, '/api/auth');
+
   if (!success) {
     console.log("⚠ Could not automatically update server." + ext);
     console.log("  Please add auth routes manually:");

@@ -144,32 +144,37 @@ export function fileExists(filePath) {
  * @param {string} serverPath - Path to server file
  * @param {string} resourceName - Resource name (e.g., 'Product')
  * @param {string} ext - File extension ('js' or 'ts')
+ * @param {string|null} routePath - Optional explicit mount path (e.g., '/api/auth'). Defaults to '/api/<resourceName>s'
  * @returns {boolean} True if updated successfully
  */
-export function updateServerWithRoute(serverPath, resourceName, ext = 'js') {
+export function updateServerWithRoute(serverPath, resourceName, ext = 'js', routePath = null) {
     try {
         // Security: Validate inputs
+        if (!serverPath || typeof serverPath !== 'string') {
+            throw new Error('Invalid server path: expected a non-empty string');
+        }
         validatePath(serverPath);
         if (!resourceName || typeof resourceName !== 'string' || resourceName.length > SECURITY_LIMITS.MAX_RESOURCE_NAME_LENGTH) {
             throw new Error('Invalid resource name');
         }
-        
+
         let serverContent = readFileSafe(serverPath);
-        
+
         if (!serverContent) {
             return false;
         }
-        
+
         const resourceLower = resourceName.toLowerCase();
         const resourcePlural = resourceLower + 's';
+        const mountPath = routePath || `/api/${resourcePlural}`;
         const routeFileName = `${resourceLower}Routes.${ext}`;
-        
+
         // Check if route already imported
         const importStatement = `import ${resourceLower}Routes from './routes/${routeFileName}';`;
         if (serverContent.includes(importStatement)) {
             return false; // Already exists
         }
-        
+
         // Find the last import statement
         const importRegex = /import .+ from .+;/g;
         const imports = serverContent.match(importRegex);
@@ -177,9 +182,9 @@ export function updateServerWithRoute(serverPath, resourceName, ext = 'js') {
             const lastImport = imports[imports.length - 1];
             serverContent = serverContent.replace(lastImport, `${lastImport}\n${importStatement}`);
         }
-        
+
         // Check if route already registered
-        const routeStatement = `app.use('/api/${resourcePlural}', ${resourceLower}Routes);`;
+        const routeStatement = `app.use('${mountPath}', ${resourceLower}Routes);`;
         if (serverContent.includes(routeStatement)) {
             return false; // Already exists
         }
