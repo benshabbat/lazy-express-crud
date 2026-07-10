@@ -72,7 +72,12 @@ if (projectName.length > 214) {
 }
 
 // Validate the project name
-validateProjectName(projectName);
+try {
+    validateProjectName(projectName);
+} catch (error) {
+    console.error(`❌ Error: ${error.message}`);
+    process.exit(1);
+}
 
 // Create project directory
 const projectPath = path.join(process.cwd(), projectName);

@@ -13,6 +13,7 @@ import {
 } from './src/utils/index.js';
 import {
     getResourceCollectionItem,
+    getAuthCollectionItem,
     getHealthCheckItem,
     getPostmanCollection
 } from './src/templates/postman/index.js';
@@ -116,12 +117,23 @@ routeFiles.forEach(file => {
     }
     
     const resourceName = baseName.charAt(0).toUpperCase() + baseName.slice(1);
+
+    // The "auth" routes file is a special case: it's mounted at '/api/auth'
+    // (not pluralized) and exposes register/login/me instead of generic CRUD
+    // endpoints. Treating it like a regular resource produced a wrong path
+    // ('/api/auths') and incorrect CRUD operations in the generated collection.
+    if (baseName.toLowerCase() === 'auth') {
+        console.log(`  ✅ Auth (/api/auth)`);
+        collectionItems.push(getAuthCollectionItem());
+        return;
+    }
+
     const routePath = baseName.toLowerCase() + 's';
-    
+
     console.log(`  ✅ ${resourceName} (/${routePath})`);
-    
+
     const resourceItem = getResourceCollectionItem(resourceName);
-    
+
     collectionItems.push(resourceItem);
 });
 
