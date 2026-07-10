@@ -11,7 +11,8 @@ import {
     readPackageJson,
     detectDatabase,
     fileExists,
-    getProjectExtension
+    getProjectExtension,
+    isTypeScriptProject
 } from './src/utils/index.js';
 import {
     getDockerfileTemplate,
@@ -61,7 +62,8 @@ const mongoExpressPassword = dbChoice === 'mongodb' ? crypto.randomBytes(16).toS
 const mysqlPassword = dbChoice === 'mysql' ? crypto.randomBytes(24).toString('hex') : '';
 
 // Get templates
-const dockerfileTemplate = getDockerfileTemplate();
+const isTypeScript = isTypeScriptProject(currentDir);
+const dockerfileTemplate = getDockerfileTemplate(isTypeScript);
 const dockerignoreTemplate = getDockerIgnoreTemplate();
 const dockerComposeContent = getDockerComposeTemplate(dbChoice, projectName, mongoExpressPassword, mysqlPassword);
 const dockerReadmeContent = getDockerReadmeTemplate(dbChoice, projectName);
