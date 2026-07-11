@@ -81,6 +81,13 @@ Enter your choice (1/2): 2
 Enter your choice (1/2/3): 1
 ```
 
+**Non-Interactive Setup (CI, scripts, piped stdin):**
+
+Pass `--lang` and `--db` to skip the prompts entirely:
+```bash
+npx lazy-express-crud my-api --lang=typescript --db=mongodb
+```
+
 ### 2. Start Your Server
 
 **For TypeScript Projects:**
@@ -616,10 +623,15 @@ Creates a new Express CRUD API project
 
 **Options:**
 - `project-name` - Name of your project (optional, defaults to "express-crud-app")
+- `--lang=<javascript|typescript>` (alias `--language`) - Skip the language prompt
+- `--db=<mongodb|mysql|memory>` (alias `--database`) - Skip the database prompt
 
 **Example:**
 ```bash
 lazy-crud my-awesome-api
+
+# Non-interactive (CI, scripts, piped stdin)
+lazy-crud my-awesome-api --lang=typescript --db=mongodb
 ```
 
 ### add-crud [ResourceName]

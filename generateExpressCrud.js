@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import {
     validateProjectName,
+    createPromptInterface,
     promptLanguage,
     promptDatabase,
     sanitizeError
@@ -62,8 +63,79 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+/**
+ * Normalize a --lang/--language value to 'javascript' or 'typescript'.
+ * @param {string} value
+ * @returns {string|null} Normalized value, or null if not recognized
+ */
+function normalizeLanguageFlag(value) {
+    const normalized = String(value).trim().toLowerCase();
+    if (['js', 'javascript'].includes(normalized)) return 'javascript';
+    if (['ts', 'typescript'].includes(normalized)) return 'typescript';
+    return null;
+}
+
+/**
+ * Normalize a --db/--database value to 'mongodb', 'mysql' or 'memory'.
+ * @param {string} value
+ * @returns {string|null} Normalized value, or null if not recognized
+ */
+function normalizeDatabaseFlag(value) {
+    const normalized = String(value).trim().toLowerCase();
+    if (['mongodb', 'mongo'].includes(normalized)) return 'mongodb';
+    if (normalized === 'mysql') return 'mysql';
+    if (['memory', 'in-memory', 'none'].includes(normalized)) return 'memory';
+    return null;
+}
+
+// Parse command line arguments: the first non-flag argument is the project
+// name; --lang/--language and --db/--database let CI pipelines and other
+// non-interactive/piped-stdin usages skip the prompts entirely.
+const rawArgs = process.argv.slice(2);
+const positionalArgs = [];
+let langFlagRaw = null;
+let dbFlagRaw = null;
+
+for (const arg of rawArgs) {
+    const flagMatch = arg.match(/^--(lang|language|db|database)(?:=(.*))?$/);
+    if (!flagMatch) {
+        positionalArgs.push(arg);
+        continue;
+    }
+
+    const [, flagName, flagValue] = flagMatch;
+    if (flagValue === undefined) {
+        console.error(`❌ Error: Missing value for --${flagName}. Use --${flagName}=<value>.`);
+        process.exit(1);
+    }
+
+    if (flagName === 'lang' || flagName === 'language') {
+        langFlagRaw = flagValue;
+    } else {
+        dbFlagRaw = flagValue;
+    }
+}
+
+let cliLanguage = null;
+if (langFlagRaw !== null) {
+    cliLanguage = normalizeLanguageFlag(langFlagRaw);
+    if (!cliLanguage) {
+        console.error(`❌ Error: Invalid --lang value "${langFlagRaw}". Expected "javascript" or "typescript".`);
+        process.exit(1);
+    }
+}
+
+let cliDatabase = null;
+if (dbFlagRaw !== null) {
+    cliDatabase = normalizeDatabaseFlag(dbFlagRaw);
+    if (!cliDatabase) {
+        console.error(`❌ Error: Invalid --db value "${dbFlagRaw}". Expected "mongodb", "mysql" or "memory".`);
+        process.exit(1);
+    }
+}
+
 // Get project name from command line arguments
-const projectName = process.argv[2] || 'express-crud-app';
+const projectName = positionalArgs[0] || 'express-crud-app';
 
 // Security: Basic length check to prevent DoS
 if (projectName.length > 214) {
@@ -90,12 +162,33 @@ if (fs.existsSync(projectPath)) {
 
 // Main async function
 async function createProject() {
-    // Ask for language choice
-    const langChoice = await promptLanguage();
-    
-    // Ask for database choice
-    const dbChoice = await promptDatabase();
-    
+    // Reuse a single readline interface across every prompt in this
+    // sequence. Creating a fresh interface per question breaks piped/CI
+    // stdin: only the first interface ever receives input and the process
+    // silently exits with code 0 once stdin reaches EOF while later prompts
+    // are still pending (see issue #5).
+    let rl = null;
+    const getPromptInterface = () => {
+        if (!rl) {
+            rl = createPromptInterface();
+        }
+        return rl;
+    };
+
+    let langChoice;
+    let dbChoice;
+    try {
+        // Ask for language choice (skipped if --lang/--language was provided)
+        langChoice = cliLanguage || await promptLanguage(getPromptInterface());
+
+        // Ask for database choice (skipped if --db/--database was provided)
+        dbChoice = cliDatabase || await promptDatabase(getPromptInterface());
+    } finally {
+        if (rl) {
+            rl.close();
+        }
+    }
+
     const isTypeScript = langChoice === 'typescript';
     const ext = isTypeScript ? 'ts' : 'js';
     
