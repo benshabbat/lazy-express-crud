@@ -89,8 +89,8 @@
     "CHANGELOG.md",
     "SECURITY-AUDIT.md",
     "SECURITY-FINAL-REPORT.md",
-    "TESTING-GUIDE.md",
-    "TESTING-README.md",
+    "AUTH-TESTING-GUIDE.md",
+    "UNIT-TESTING-GUIDE.md",
     "LICENSE"
   ]
 }

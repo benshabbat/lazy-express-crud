@@ -230,6 +230,8 @@ router.get('/protected', authMiddleware, yourController);
 router.post('/items', authMiddleware, itemController.createItem);
 ```
 
+For a full walkthrough of manually testing every auth endpoint (register, login, protected routes, error cases), see [AUTH-TESTING-GUIDE.md](AUTH-TESTING-GUIDE.md).
+
 ## ➕ Adding More Resources
 
 After creating your project, easily add more CRUD resources:
@@ -290,7 +292,7 @@ Creates `postman-collection.json` with:
 
 ## 🧪 Unit Testing
 
-Every project includes **Jest** testing framework with auto-generated tests:
+Every project includes **Jest** testing framework with auto-generated tests. See [UNIT-TESTING-GUIDE.md](UNIT-TESTING-GUIDE.md) for the full guide.
 
 ### Running Tests
 

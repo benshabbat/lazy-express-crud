@@ -1,5 +1,11 @@
 # 🧪 Unit Testing Feature
 
+This document covers the **auto-generated** Jest/supertest unit tests that
+ship with every CRUD resource.
+
+> Looking to manually test the JWT auth endpoints (register/login/me) with
+> `curl` or Postman instead? See [AUTH-TESTING-GUIDE.md](AUTH-TESTING-GUIDE.md).
+
 ## Overview
 
 Starting from version 1.6.0, **lazy-express-crud** automatically generates comprehensive unit tests for every resource using **Jest** and **supertest**.

@@ -17,7 +17,7 @@ model: sonnet
 2. **איכות קוד** - פונקציות ארוכות מדי, קוד מת, error handling חסר, קוד סינכרוני שחוסם, hardcoded values שכדאי להוציא לקונפיג.
 3. **אבטחה** - קרא את `SECURITY-AUDIT.md` ו-`SECURITY-FINAL-REPORT.md` ו-`security-audit.js` והבן מה כבר נבדק; חפש command injection / path traversal בסקריפטים שמייצרים קבצים ומריצים פקודות (יש כאן CLI שכותב קבצים וקורא input מהמשתמש - תשומת לב מיוחדת ל-`fs.writeFileSync`, template injection, ו-shell exec אם יש).
 4. **בדיקות** - כיסוי טסטים תחת `tests/`, האם יש טסטים לנתיבי כשל (not just happy path), האם ה-CI (`.github/`) מריץ אותם.
-5. **תיעוד** - עדכניות `README.md`, `CHANGELOG.md`, `TESTING-GUIDE.md` מול המצב בפועל בקוד; קבצי md כפולים/מיותרים (יש כבר תקדים של הסרת SECURITY-SUMMARY.md).
+5. **תיעוד** - עדכניות `README.md`, `CHANGELOG.md`, `AUTH-TESTING-GUIDE.md`, `UNIT-TESTING-GUIDE.md` מול המצב בפועל בקוד; קבצי md כפולים/מיותרים (יש כבר תקדים של הסרת SECURITY-SUMMARY.md).
 6. **תלויות ו-packaging** - `package.json`: תלויות מיושנות (`npm outdated` אם אפשר להריץ), engines, `files` array מול קבצים שבאמת קיימים, גרסת node.
 7. **חוויית משתמש של ה-CLI** - הודעות שגיאה למשתמש, ולידציה של קלט, exit codes, הודעות התקדמות.
 
