@@ -25,7 +25,7 @@ if (resourceNames.length === 0) {
 try {
     resourceNames.forEach(name => validateResourceName(name));
 } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('❌ Error:', sanitizeError(error));
     process.exit(1);
 }
 
@@ -44,7 +44,7 @@ try {
         throw new Error('Security: Script path is outside allowed directory');
     }
 } catch (error) {
-    console.error('❌ Security Error:', error.message);
+    console.error('❌ Security Error:', sanitizeError(error));
     process.exit(1);
 }
 

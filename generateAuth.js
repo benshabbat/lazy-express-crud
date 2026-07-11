@@ -307,7 +307,7 @@ function main() {
     console.log("  3. Replace in-memory storage with a real database");
     console.log("  4. If User.js existed before, add bcrypt methods manually\n");
   } catch (error) {
-    console.error("❌ Error:", error.message);
+    console.error("❌ Error:", sanitizeError(error));
     process.exit(1);
   }
 }

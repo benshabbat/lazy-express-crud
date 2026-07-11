@@ -18,7 +18,8 @@ const testFiles = [
     'test-crud-mysql.js',
     'test-crud-typescript.js',
     'test-crud-mysql-ts.js',
-    'test-docker-typescript.js'
+    'test-docker-typescript.js',
+    'test-cli-piped-stdin.js'
 ];
 
 let failed = 0;

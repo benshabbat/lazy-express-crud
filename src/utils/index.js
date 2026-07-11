@@ -27,6 +27,7 @@ export {
 
 // Prompt utilities
 export {
+    createPromptInterface,
     prompt,
     promptChoice,
     promptLanguage,
