@@ -54,7 +54,7 @@ if (resourceName.length > 100) {
 try {
     validateResourceName(resourceName);
 } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('❌ Error:', sanitizeError(error));
     process.exit(1);
 }
 
@@ -160,7 +160,7 @@ if (isTypeScript) {
 try {
     writeFiles(files, false);
 } catch (error) {
-    console.error(`❌ Error: Failed to create resource "${resourceName}": ${error.message}`);
+    console.error(`❌ Error: Failed to create resource "${resourceName}": ${sanitizeError(error)}`);
     process.exit(1);
 }
 files.forEach(file => {
