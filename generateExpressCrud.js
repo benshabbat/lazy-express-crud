@@ -147,7 +147,7 @@ if (projectName.length > 214) {
 try {
     validateProjectName(projectName);
 } catch (error) {
-    console.error(`❌ Error: ${error.message}`);
+    console.error(`❌ Error: ${sanitizeError(error)}`);
     process.exit(1);
 }
 
@@ -216,7 +216,7 @@ directories.forEach(dir => {
             fs.mkdirSync(dir, { recursive: true });
             console.log(`✅ Created directory: ${path.relative(process.cwd(), dir)}`);
         } catch (error) {
-            console.error(`❌ Error creating directory ${dir}: ${error.message}`);
+            console.error(`❌ Error creating directory ${dir}: ${sanitizeError(error)}`);
             process.exit(1);
         }
     }
@@ -286,7 +286,7 @@ files.forEach(file => {
         fs.writeFileSync(file.path, file.content);
         console.log(`✅ Created file: ${path.relative(process.cwd(), file.path)}`);
     } catch (error) {
-        console.error(`❌ Error creating file ${file.path}: ${error.message}`);
+        console.error(`❌ Error creating file ${file.path}: ${sanitizeError(error)}`);
         process.exit(1);
     }
 });
@@ -305,6 +305,6 @@ Your Express CRUD API will be running on http://localhost:3000
 
 // Run the async function
 createProject().catch(error => {
-    console.error(`❌ Error creating project: ${sanitizeError(error)}`);
+    console.error('❌ Error creating project:', sanitizeError(error));
     process.exit(1);
 });
