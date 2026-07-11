@@ -79,6 +79,9 @@ console.log(`✅ Detected: ${dbChoice === 'mongodb' ? 'MongoDB (mongoose)' : dbC
 const resourceLower = resourceName.toLowerCase();
 const resourcePlural = resourceLower + 's';
 const routeFileName = `${resourceLower}Routes.${ext}`;
+// ESM/TS convention: import paths always use the compiled '.js' extension,
+// even when the source file itself is '.ts' (TS2691 otherwise).
+const routeImportFileName = `${resourceLower}Routes.js`;
 const controllerFileName = `${resourceLower}Controller.${ext}`;
 const serviceFileName = `${resourceLower}Service.${ext}`;
 const modelFileName = `${resourceName}.${ext}`;
@@ -173,7 +176,7 @@ if (updated) {
 } else {
     console.log(`⚠ Could not automatically update server.${ext}`);
     console.log('  Please add the route manually:');
-    console.log(`  import ${resourceLower}Routes from './routes/${routeFileName}';`);
+    console.log(`  import ${resourceLower}Routes from './routes/${routeImportFileName}';`);
     console.log(`  app.use('/api/${resourcePlural}', ${resourceLower}Routes);`);
 }
 
