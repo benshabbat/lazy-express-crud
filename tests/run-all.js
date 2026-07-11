@@ -18,6 +18,7 @@ const testFiles = [
     'test-crud-mysql.js',
     'test-crud-typescript.js',
     'test-crud-mysql-ts.js',
+    'test-add-crud-ts-import.js',
     'test-cli-piped-stdin.js'
 ];
 

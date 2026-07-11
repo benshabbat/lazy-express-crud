@@ -167,7 +167,10 @@ export function updateServerWithRoute(serverPath, resourceName, ext = 'js', rout
         const resourceLower = resourceName.toLowerCase();
         const resourcePlural = resourceLower + 's';
         const mountPath = routePath || `/api/${resourcePlural}`;
-        const routeFileName = `${resourceLower}Routes.${ext}`;
+        // ESM/TS convention: import paths always use the compiled '.js' extension,
+        // even when the source file itself is '.ts'. Using '.ts' here fails
+        // TypeScript compilation with TS2691 ("An import path cannot end with a '.ts' extension").
+        const routeFileName = `${resourceLower}Routes.js`;
 
         // Check if route already imported
         const importStatement = `import ${resourceLower}Routes from './routes/${routeFileName}';`;
