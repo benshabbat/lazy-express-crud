@@ -9,7 +9,12 @@ import path from 'path';
  */
 export function validatePath(inputPath) {
     const normalized = path.normalize(inputPath);
-    if (normalized.includes('..') || normalized.includes('~')) {
+    // Check '..' as a distinct path segment, not a substring: a raw substring
+    // check also rejects legitimate paths, e.g. Windows 8.3 short names like
+    // "RUNNER~1" (used in TEMP/TMP on GitHub Actions Windows runners), which
+    // contain '~' but have no traversal meaning since Node never expands it.
+    const segments = normalized.split(path.sep);
+    if (segments.includes('..')) {
         throw new Error('Invalid path: Path traversal detected');
     }
     if (normalized.length > 500) {
