@@ -1,54 +1,74 @@
-# 🔒 Final Security Audit Report - lazy-express-crud
+# 🔒 Security Review Report - lazy-express-crud
 
-**Date:** January 16, 2026  
-**Security Score:** **100/100** ✅  
-**Status:** **READY FOR PRODUCTION**
+**Date:** January 16, 2026
+**Automated Audit Score:** **100/100** (see scope note below)
+**Status:** No known issues from the automated checks below; not a substitute for an independent audit
+
+---
+
+## ⚠️ Scope & Limitations
+
+This report summarizes the results of `security-audit.js`, a small script maintained
+in this repository that runs a fixed set of pattern-based checks (e.g. looks for
+`execSync`, path validation helpers, presence of `sanitizeError`, etc.). It is a
+**self-assessment**, not an independent penetration test or third-party audit.
+
+- A "100/100" score means the specific checks in `security-audit.js` did not flag
+  anything - it does not mean the codebase has been exhaustively reviewed for all
+  possible vulnerabilities.
+- `npm audit` reporting 0 vulnerabilities reflects known CVEs in the current
+  dependency tree at the time this report was generated; it can change as new
+  advisories are published.
+- Treat this document as a snapshot of what was checked and fixed, not a guarantee.
 
 ---
 
 ## 📊 Audit Summary
 
-### ✅ Results
+### Results (automated checks)
 - 🔴 **Critical Issues:** 0
-- 🟠 **High Severity:** 0  
+- 🟠 **High Severity:** 0
 - 🟡 **Medium Severity:** 0
 - 🟢 **Low Severity:** 0
 
-**PERFECT SCORE - NO ISSUES FOUND** 🎉
+No issues were flagged by `security-audit.js` at the time of this report.
 
 ---
 
 ## 🎯 Before & After Comparison
 
-| Category | Before | After | Improvement |
+The percentages below are qualitative estimates of relative improvement for each
+area, not a measured/independently-verified metric.
+
+| Category | Before | After | Notes |
 |---------|------|------|-------------|
-| Path Traversal | ⚠️ Partial | ✅ Complete | +40% |
-| Input Validation | ⚠️ Basic | ✅ Complete | +30% |
-| Command Injection | 🚨 Vulnerable | ✅ Protected | +100% |
-| File System | ✅ Good | ✅ Excellent | +10% |
-| Template Security | ✅ Good | ✅ Excellent | +5% |
-| Error Handling | ⚠️ Exposed | ✅ Sanitized | +8% |
-| **Overall Score** | **57/100** | **100/100** | **+75%** 🎉 |
+| Path Traversal | Partial validation | Validated via `validatePath()`/`isPathInProject()` | Improved |
+| Input Validation | Basic | Enforced via `validateResourceName()` | Improved |
+| Command Injection | `execSync` with interpolated input | `spawn(..., { shell: false })` with array args | Fixed |
+| File System | Basic checks | Added size limits and existence checks | Improved |
+| Template Security | Basic | Input validated before use in templates | Improved |
+| Error Handling | Raw error messages printed | `sanitizeError()` wired into CLI entrypoints | Improved |
+| **Automated audit score** | **57/100** | **100/100** | Based on `security-audit.js` checks only |
 
 ---
 
 ## 🛡️ Security Measures Implemented
 
-### 1. Path Traversal Protection ✅
+### 1. Path Traversal Protection
 - `validateProjectName()` / `validatePath()`
 - `isPathInProject()` - ensures paths stay within project
 - Checks for `..`, `/`, `\`
 - Path length limits
 - Reserved name blocking
 
-### 2. Input Validation ✅
+### 2. Input Validation
 - `validateResourceName()` - enforces PascalCase
 - Regex: `/^[A-Z][a-zA-Z0-9]*$/`
 - Length limits (1-100 characters)
 - Reserved names blocking
 - Type validation
 
-### 3. Command Injection Prevention ✅
+### 3. Command Injection Prevention
 ```javascript
 // Before (DANGEROUS):
 execSync(`node "${script}" ${name}`);
@@ -62,13 +82,13 @@ spawn('node', [script, name], {
 // ✅ Safe array arguments
 ```
 
-### 4. File System Security ✅
+### 4. File System Security
 - `fs.existsSync()` checks
 - File size validation (max 10MB)
 - Path normalization
 - Safe path operations
 
-### 5. Error Message Sanitization ✅ **NEW!**
+### 5. Error Message Sanitization
 ```javascript
 function sanitizeError(error) {
     if (process.env.NODE_ENV === 'production') {
@@ -77,11 +97,14 @@ function sanitizeError(error) {
     return error.message || error.toString();
 }
 ```
-- Prevents sensitive information disclosure
-- Development mode shows full errors
-- Production mode shows generic messages
+- `sanitizeError()` is defined in `src/utils/errorUtils.js` and is called from the
+  `catch` blocks in `generateExpressCrud.js`, `addCrudResource.js`,
+  `addCrudResource-single.js`, and `generateAuth.js` (see #8 for the history of this
+  fix - it was previously imported but not invoked).
+- In production mode (`NODE_ENV=production`) it returns a generic message;
+  otherwise it returns the underlying error message to aid debugging.
 
-### 6. Generated Code Security ✅
+### 6. Generated Code Security
 - Helmet.js security headers
 - express-rate-limit (DoS protection)
 - CORS configuration
@@ -91,9 +114,9 @@ function sanitizeError(error) {
 
 ---
 
-## 📝 All Issues Fixed
+## 📝 Issues Addressed
 
-### 🔴 Command Injection (FIXED)
+### Command Injection (Fixed)
 **File:** addCrudResource.js
 
 **Before:**
@@ -112,7 +135,7 @@ spawn('node', [originalScript, resourceName], {
 // ✅ Array arguments, no shell
 ```
 
-### 🟠 Path Validation (FIXED)
+### Path Validation (Added)
 **Files:** addCrudResource-single.js, addCrudResource.js
 
 **Added:**
@@ -135,7 +158,7 @@ function isPathInProject(targetPath, projectRoot) {
 }
 ```
 
-### 🟠 Resource Name Validation (FIXED)
+### Resource Name Validation (Added)
 **Files:** All resource creation files
 
 **Added:**
@@ -165,7 +188,7 @@ function validateResourceName(name) {
 }
 ```
 
-### 🟢 File Size Validation (FIXED)
+### File Size Validation (Added)
 **File:** addCrudResource-single.js
 
 **Added:**
@@ -176,7 +199,7 @@ if (stats.size > 10 * 1024 * 1024) {
 }
 ```
 
-### 🟢 Error Sanitization (FIXED)
+### Error Sanitization (Added, later wired up)
 **Files:** All main files
 
 **Added:**
@@ -188,33 +211,38 @@ function sanitizeError(error) {
     return error.message || error.toString();
 }
 ```
+Note: this function was initially only defined/imported and not called from any
+`catch` block (see #8). That gap has since been fixed - `sanitizeError()` is now
+called in the CLI entrypoints listed above.
 
 ---
 
-## ✅ Security Checklist - All Passed
+## ✅ Automated Checklist Results
 
-- ✅ Path Traversal Protection
-- ✅ Input Validation  
-- ✅ File System Security
-- ✅ Command Injection Prevention
-- ✅ Template Injection Prevention
-- ✅ Dependencies Up-to-date
-- ✅ Generated Code Security
-- ✅ Error Handling & Sanitization
-- ✅ Environment Variables Protected
-- ✅ Documentation Complete
+The following checks in `security-audit.js` currently pass. They are pattern-based
+checks (e.g. "does this file call `sanitizeError`?"), not manual code review
+findings.
+
+- ✅ Path Traversal Protection helpers present
+- ✅ Input Validation helpers present
+- ✅ File System Security checks present
+- ✅ Command Injection Prevention (`spawn` with `shell: false`)
+- ✅ Template Injection Prevention (input validated before templating)
+- ✅ Dependencies checked via `npm audit` (0 known vulnerabilities at time of writing)
+- ✅ Generated Code Security patterns present (Helmet, rate limiting, etc.)
+- ✅ Error Handling & Sanitization wired into CLI entrypoints
+- ✅ `.env` added to generated `.gitignore`
+- ✅ README documents security-relevant configuration
 
 ---
 
-## 🚀 Ready for npm Publication
-
-### ✅ Pre-publish Checklist
+## 🚀 Pre-publish Checklist
 
 ```bash
 # 1. Security
-✅ node security-audit.js (Score: 100/100)
-✅ npm audit (0 vulnerabilities)
-✅ All security issues resolved
+✅ node security-audit.js (Score: 100/100 on current checks)
+✅ npm audit (0 known vulnerabilities at time of writing)
+✅ Issues identified during this review have been addressed
 
 # 2. Documentation
 ✅ README.md up to date
@@ -228,9 +256,9 @@ function sanitizeError(error) {
 ✅ bin scripts configured
 
 # 4. Testing
-✅ Manual testing completed
+✅ Automated test suite passing (see tests/run-all.js)
 ✅ TypeScript support verified
-✅ All commands working
+✅ Core commands covered by tests
 
 # 5. Publication
 npm publish --dry-run  # Test
@@ -239,23 +267,24 @@ npm publish            # Publish
 
 ---
 
-## 🏆 Final Summary
+## 🏆 Summary
 
-**lazy-express-crud is READY for npm publication! ✅**
+- **Automated audit score:** 100/100 on the checks implemented in `security-audit.js`
+- **Documentation:** Reviewed and updated for accuracy
+- **Functionality:** TypeScript and JavaScript support
+- **Known issues:** None open from this review at the time of writing
 
-- **Security:** 100/100 PERFECT
-- **Documentation:** Complete
-- **Functionality:** TypeScript + JavaScript support
-- **Issues:** ZERO remaining
+### Changes made as part of this review:
+- Replaced `execSync` with `spawn(..., { shell: false })` to remove a command
+  injection vector
+- Added input validation for resource names and paths
+- Added file size limits for file system operations
+- Wired `sanitizeError()` into the CLI entrypoints' `catch` blocks
 
-### Key Achievements:
-- ✅ Fixed 8 security vulnerabilities
-- ✅ Improved score from 57 to 100 (+75%)
-- ✅ Added comprehensive input validation
-- ✅ Implemented error sanitization
-- ✅ Protected against all common attacks
-
-**Recommendation:** Ready to publish with confidence! 🚀
+This report reflects the state of the checks at the time it was written. It should
+be re-run (`node security-audit.js` and `npm audit`) periodically, and does not
+replace a full manual or third-party security review before relying on this
+project in a sensitive production context.
 
 ---
 
@@ -293,6 +322,6 @@ npm publish            # Publish
 
 ---
 
-**Generated by:** Security Audit Tool  
-**Date:** January 16, 2026  
+**Generated by:** `security-audit.js` (automated, pattern-based checks)
+**Date:** January 16, 2026
 **Version:** 2.0.0

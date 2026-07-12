@@ -21,9 +21,31 @@ npm install
 ```
 
 3. Start the server:
-```bash
-node src/server.js
-```
+
+   **JavaScript projects:**
+   ```bash
+   node src/server.js
+   # or, with auto-reload:
+   npm run dev
+   ```
+
+   **TypeScript projects:**
+
+   When generating the project you can choose TypeScript (interactively, or with `--lang typescript`). TypeScript projects don't ship a `src/server.js` file — use one of the npm scripts defined in the generated `package.json` instead:
+
+   ```bash
+   # Development (auto-reload, runs the .ts source directly via tsx)
+   npm run dev
+
+   # Production-style: compile TypeScript then run the compiled output
+   npm run build
+   npm start
+   ```
+
+   This maps to the following commands under the hood:
+   - `npm run dev` → `tsx watch src/server.ts`
+   - `npm run build` → `tsc` (compiles `src/` to `dist/`)
+   - `npm start` → `node dist/server.js` (requires `npm run build` first)
 
 ## Test 1: Register New User
 
@@ -291,7 +313,8 @@ Write-Host "`n🎉 All manual tests completed!" -ForegroundColor Cyan
 **Server won't start:**
 - Make sure you ran `npm install` after `add-auth`
 - Check that bcryptjs and jsonwebtoken are in package.json
-- Verify server.js has the auth routes imported
+- Verify server.js (or server.ts for TypeScript projects) has the auth routes imported
+- For TypeScript projects, make sure you're using `npm run dev` (or `npm run build && npm start`) — there is no `src/server.js` to run directly with `node`
 
 **401 Unauthorized on protected routes:**
 - Make sure Authorization header is: `Bearer TOKEN` (with space)
