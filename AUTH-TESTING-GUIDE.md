@@ -1,4 +1,11 @@
-# Manual Testing Guide
+# Manual Auth Testing Guide
+
+This guide walks through manually testing the JWT authentication endpoints
+(register, login, protected routes) added by `add-auth`, using `curl` or
+PowerShell.
+
+> Looking for the auto-generated Jest/supertest unit tests instead? See
+> [UNIT-TESTING-GUIDE.md](UNIT-TESTING-GUIDE.md).
 
 ## Prerequisites
 1. Create a new project:
